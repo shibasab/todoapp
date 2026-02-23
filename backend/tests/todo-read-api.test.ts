@@ -127,6 +127,35 @@ describe("todo read api", () => {
     }
   });
 
+  it("GET /api/todo/ は不正Authorization形式と不正JWTで401を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const invalidFormatResponse = await testApp.app.request("/api/todo/", {
+        method: "GET",
+        headers: {
+          Authorization: "Token invalid",
+        },
+      });
+      const invalidFormatBody = await readJson<ErrorBody>(invalidFormatResponse);
+
+      const invalidJwtResponse = await testApp.app.request("/api/todo/", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer invalid.token.value",
+        },
+      });
+      const invalidJwtBody = await readJson<ErrorBody>(invalidJwtResponse);
+
+      expect(invalidFormatResponse.status).toBe(401);
+      expect(invalidFormatBody.detail).toBe("Could not validate credentials");
+      expect(invalidJwtResponse.status).toBe(401);
+      expect(invalidJwtBody.detail).toBe("Could not validate credentials");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("GET /api/todo/ は query フィルタで絞り込める", async () => {
     const testApp = await setupTodoTestApp();
 

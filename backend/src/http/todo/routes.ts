@@ -33,19 +33,6 @@ const toValidationError = (
   ],
 });
 
-const readBearerToken = (authorizationHeader: string | undefined): string | null => {
-  if (authorizationHeader == null || authorizationHeader === "") {
-    return null;
-  }
-
-  if (!authorizationHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authorizationHeader.slice("Bearer ".length).trim();
-  return token === "" ? null : token;
-};
-
 export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): Hono => {
   const router = new Hono({ strict: false });
   const authService = createAuthService(dependencies.prisma, dependencies.authConfig);
@@ -66,14 +53,9 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   };
 
   router.get("/", async (context) => {
-    const token = readBearerToken(context.req.header("Authorization"));
-    if (token == null) {
-      return context.json({ detail: "Could not validate credentials" }, 401);
-    }
-
-    const authenticated = await authService.authenticate(token);
+    const authenticated = await authService.authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: "Could not validate credentials" }, 401);
+      return context.json({ detail: authenticated.error.detail }, 401);
     }
 
     const parsedQuery = listTodoQuerySchema.safeParse(context.req.query());
@@ -101,14 +83,9 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.get("/:todoId", async (context) => {
-    const token = readBearerToken(context.req.header("Authorization"));
-    if (token == null) {
-      return context.json({ detail: "Could not validate credentials" }, 401);
-    }
-
-    const authenticated = await authService.authenticate(token);
+    const authenticated = await authService.authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: "Could not validate credentials" }, 401);
+      return context.json({ detail: authenticated.error.detail }, 401);
     }
 
     const parsedParams = todoIdParamSchema.safeParse(context.req.param());
