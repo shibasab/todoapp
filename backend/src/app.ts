@@ -1,8 +1,5 @@
 import { Hono } from "hono";
-
-export type HealthResponse = Readonly<{
-  status: "ok";
-}>;
+import type { HealthResponse } from "@todoapp/shared";
 
 const buildHealthResponse = (): HealthResponse => ({
   status: "ok",

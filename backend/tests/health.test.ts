@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { HealthResponseSchema } from "@todoapp/shared";
 import { createApp } from "../src/app";
 
 describe("health check", () => {
@@ -8,8 +9,13 @@ describe("health check", () => {
 
     const response = await app.request("/health");
     const body = await response.json();
+    const parsed = HealthResponseSchema.safeParse(body);
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ status: "ok" });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) {
+      throw new Error(parsed.error.message);
+    }
+    expect(parsed.data).toEqual({ status: "ok" });
   });
 });
