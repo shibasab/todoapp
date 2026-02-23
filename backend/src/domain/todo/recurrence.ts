@@ -1,4 +1,5 @@
 import type { TodoRecurrenceType } from "./types";
+import { assertNever } from "../../shared/error";
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
@@ -13,17 +14,17 @@ export const addOneMonth = (baseDate: Date): Date => {
 };
 
 export const calculateNextDueDate = (recurrenceType: TodoRecurrenceType, baseDate: Date): Date => {
-  if (recurrenceType === "daily") {
-    return new Date(baseDate.getTime() + DAY_IN_MILLISECONDS);
+  switch (recurrenceType) {
+    case "daily":
+      return new Date(baseDate.getTime() + DAY_IN_MILLISECONDS);
+    case "weekly":
+      return new Date(baseDate.getTime() + 7 * DAY_IN_MILLISECONDS);
+    case "monthly":
+      return addOneMonth(baseDate);
+    case "none":
+      return baseDate;
+    default: {
+      return assertNever(recurrenceType, "recurrenceType");
+    }
   }
-
-  if (recurrenceType === "weekly") {
-    return new Date(baseDate.getTime() + 7 * DAY_IN_MILLISECONDS);
-  }
-
-  if (recurrenceType === "monthly") {
-    return addOneMonth(baseDate);
-  }
-
-  return baseDate;
 };

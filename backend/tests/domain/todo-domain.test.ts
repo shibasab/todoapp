@@ -36,4 +36,15 @@ describe("todo domain functions", () => {
     expect(calculateNextDueDate("weekly", baseDate).toISOString()).toBe("2025-02-17T00:00:00.000Z");
     expect(calculateNextDueDate("none", baseDate).toISOString()).toBe("2025-02-10T00:00:00.000Z");
   });
+
+  it("未定義のrecurrenceTypeが渡された場合は網羅性エラーを投げる", () => {
+    const baseDate = new Date("2025-02-10T00:00:00.000Z");
+
+    expect(() =>
+      calculateNextDueDate(
+        "yearly" as unknown as "none" | "daily" | "weekly" | "monthly",
+        baseDate,
+      ),
+    ).toThrow("recurrenceType");
+  });
 });

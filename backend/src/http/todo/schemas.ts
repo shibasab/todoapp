@@ -31,8 +31,10 @@ export const updateTodoBodySchema = z
   })
   .strict();
 
-export const listTodoQuerySchema = z.object({
-  keyword: z.string().optional(),
-  progress_status: z.enum(["not_started", "in_progress", "completed"]).optional(),
-  due_date: z.enum(["all", "today", "this_week", "overdue", "none"]).optional(),
-});
+export const listTodoQuerySchema = z
+  .object({
+    keyword: z.string().optional(),
+    progressStatus: z.enum(["not_started", "in_progress", "completed"]).optional(),
+    dueDate: z.enum(["all", "today", "this_week", "overdue", "none"]).optional(),
+  })
+  .strict();

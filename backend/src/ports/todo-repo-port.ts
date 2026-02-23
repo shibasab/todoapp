@@ -1,10 +1,16 @@
-import type { TodoItem, TodoProgressStatus } from "../domain/todo/types";
+import type {
+  TodoDueDateFilter,
+  TodoItem,
+  TodoProgressStatus,
+  TodoRecurrenceType,
+} from "../domain/todo/types";
 
 export type TodoQuery = Readonly<{
   ownerId: number;
   now: Date;
   progressStatus?: TodoProgressStatus;
-  dueDateFilter?: "all" | "today" | "this_week" | "overdue" | "none";
+  keyword?: string;
+  dueDateFilter?: TodoDueDateFilter;
 }>;
 
 export type CreateTodoRecordInput = Readonly<{
@@ -13,7 +19,7 @@ export type CreateTodoRecordInput = Readonly<{
   detail: string;
   dueDate: Date | null;
   progressStatus: TodoProgressStatus;
-  recurrenceType: "none" | "daily" | "weekly" | "monthly";
+  recurrenceType: TodoRecurrenceType;
   parentId: number | null;
   activeName: string | null;
   previousTodoId?: number;
@@ -26,7 +32,7 @@ export type UpdateTodoRecordInput = Readonly<{
   detail?: string;
   dueDate?: Date | null;
   progressStatus?: TodoProgressStatus;
-  recurrenceType?: "none" | "daily" | "weekly" | "monthly";
+  recurrenceType?: TodoRecurrenceType;
   activeName?: string | null;
 }>;
 
