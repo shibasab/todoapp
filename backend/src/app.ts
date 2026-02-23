@@ -3,6 +3,7 @@ import type { HealthResponse } from "@todoapp/shared";
 import type { PrismaClient } from "@prisma/client";
 import { createAuthRoutes } from "./auth/routes";
 import type { AuthConfig } from "./auth/types";
+import { createTodoHttpRoutes } from "./http/todo/routes";
 import { createPrismaClient, resolveDatabaseUrl } from "./infra/prisma/client";
 
 const buildHealthResponse = (): HealthResponse => ({
@@ -44,13 +45,14 @@ const createDefaultDependencies = (): AppDependencies => {
 };
 
 export const createApp = (dependencies: AppDependencies = createDefaultDependencies()): Hono => {
-  const app = new Hono();
+  const app = new Hono({ strict: false });
 
   app.get("/health", (context) => {
     return context.json(buildHealthResponse());
   });
 
   app.route("/api/auth", createAuthRoutes(dependencies));
+  app.route("/api/todo", createTodoHttpRoutes(dependencies));
 
   return app;
 };

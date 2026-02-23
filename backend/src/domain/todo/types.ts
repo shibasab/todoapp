@@ -37,7 +37,7 @@ export type TodoListItem = Readonly<{
   name: string;
   detail: string;
   dueDate: string | null;
-  created_at: string;
+  createdAt: string;
   progressStatus: TodoProgressStatus;
   recurrenceType: TodoRecurrenceType;
   parentId: number | null;

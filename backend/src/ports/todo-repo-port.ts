@@ -7,6 +7,7 @@ import type {
 
 export type TodoQuery = Readonly<{
   ownerId: number;
+  now: Date;
   progressStatus?: TodoProgressStatus;
   keyword?: string;
   dueDateFilter?: TodoDueDateFilter;

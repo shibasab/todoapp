@@ -3,6 +3,7 @@ import { err, ok } from "@todoapp/shared";
 import { describe, expect, it } from "vitest";
 import type { AuthRepository } from "../src/auth/repository";
 import { createAuthServiceFromRepository } from "../src/auth/service";
+import { createAccessToken } from "../src/auth/token";
 import type { AuthConfig } from "../src/auth/types";
 
 const authConfig: AuthConfig = {
@@ -71,6 +72,39 @@ describe("auth service", () => {
       err({
         type: "InternalError",
         detail: "Internal server error",
+      }),
+    );
+  });
+
+  it("authenticate はBearerヘッダーからトークンを解釈できる", async () => {
+    const user = createUser({ id: 10, isActive: true });
+    const repository = createAuthRepositoryStub({
+      findUserById: async () => user,
+    });
+    const authService = createAuthServiceFromRepository(repository, authConfig);
+    const token = await createAccessToken({ sub: String(user.id) }, authConfig);
+
+    const result = await authService.authenticate(`Bearer ${token}`);
+
+    expect(result).toEqual(
+      ok({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }),
+    );
+  });
+
+  it("authenticate は不正Authorization形式をUnauthorizedに変換する", async () => {
+    const repository = createAuthRepositoryStub();
+    const authService = createAuthServiceFromRepository(repository, authConfig);
+
+    const result = await authService.authenticate("Token invalid-format");
+
+    expect(result).toEqual(
+      err({
+        type: "Unauthorized",
+        detail: "Could not validate credentials",
       }),
     );
   });

@@ -35,7 +35,9 @@ export type AuthServiceError =
 export type AuthService = Readonly<{
   register: (input: RegisterInput) => TaskResult<AuthTokenResponse, AuthServiceError>;
   login: (input: LoginInput) => TaskResult<AuthTokenResponse, AuthServiceError>;
-  authenticate: (token: string) => TaskResult<PublicUser, AuthServiceError>;
+  authenticate: (
+    authorizationHeaderOrToken: string | undefined,
+  ) => TaskResult<PublicUser, AuthServiceError>;
 }>;
 
 const toPublicUser = (
@@ -65,6 +67,19 @@ const internalServerError = (): InternalError => ({
   type: "InternalError",
   detail: "Internal server error",
 });
+
+const toToken = (authorizationHeaderOrToken: string | undefined): string | null => {
+  if (authorizationHeaderOrToken == null || authorizationHeaderOrToken === "") {
+    return null;
+  }
+
+  if (authorizationHeaderOrToken.startsWith("Bearer ")) {
+    const bearerToken = authorizationHeaderOrToken.slice("Bearer ".length).trim();
+    return bearerToken === "" ? null : bearerToken;
+  }
+
+  return authorizationHeaderOrToken.includes(" ") ? null : authorizationHeaderOrToken;
+};
 
 const mapRepositoryErrorToAuthServiceError = (errorValue: RepositoryError): AuthServiceError => {
   switch (errorValue.type) {
@@ -125,7 +140,12 @@ export const createAuthServiceFromRepository = (
         token,
       });
     },
-    authenticate: async (token) => {
+    authenticate: async (authorizationHeaderOrToken) => {
+      const token = toToken(authorizationHeaderOrToken);
+      if (token == null) {
+        return err(unauthorizedError());
+      }
+
       const verifiedToken = await verifyAccessToken(token, authConfig);
       if (!verifiedToken.ok) {
         return err(unauthorizedError());
