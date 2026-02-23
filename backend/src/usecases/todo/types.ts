@@ -1,12 +1,17 @@
 import type { TaskResult } from "@todoapp/shared";
-import type { TodoListItem } from "../../domain/todo/types";
+import type {
+  TodoDueDateFilter,
+  TodoListItem,
+  TodoProgressStatus,
+  TodoRecurrenceType,
+} from "../../domain/todo/types";
 import type { TodoUseCaseError } from "./errors";
 
 export type ListTodosInput = Readonly<{
   userId: number;
   keyword?: string;
-  progressStatus?: "not_started" | "in_progress" | "completed";
-  dueDateFilter?: "all" | "today" | "this_week" | "overdue" | "none";
+  progressStatus?: TodoProgressStatus;
+  dueDateFilter?: TodoDueDateFilter;
 }>;
 
 export type GetTodoInput = Readonly<{
@@ -19,8 +24,8 @@ export type CreateTodoInput = Readonly<{
   name: string;
   detail: string;
   dueDate: Date | null;
-  progressStatus: "not_started" | "in_progress" | "completed";
-  recurrenceType: "none" | "daily" | "weekly" | "monthly";
+  progressStatus: TodoProgressStatus;
+  recurrenceType: TodoRecurrenceType;
   parentId: number | null;
 }>;
 
@@ -30,8 +35,8 @@ export type UpdateTodoInput = Readonly<{
   name?: string;
   detail?: string;
   dueDate?: Date | null;
-  progressStatus?: "not_started" | "in_progress" | "completed";
-  recurrenceType?: "none" | "daily" | "weekly" | "monthly";
+  progressStatus?: TodoProgressStatus;
+  recurrenceType?: TodoRecurrenceType;
 }>;
 
 export type DeleteTodoInput = Readonly<{
