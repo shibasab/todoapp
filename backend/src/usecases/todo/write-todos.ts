@@ -2,24 +2,14 @@ import { err, fromPromise, ok, type TaskResult } from "@todoapp/shared";
 import { toTodoListItem } from "../../domain/todo/assembler";
 import type { TodoValidationError } from "../../domain/todo/types";
 import type { TodoRepoPort } from "../../ports/todo-repo-port";
-import type { TodoUseCaseError } from "./errors";
-import type { CreateTodoInput } from "./types";
-
-const toValidationError = (errors: readonly TodoValidationError[]): TodoUseCaseError => ({
-  type: "ValidationError",
-  detail: "Validation error",
-  errors,
-});
-
-const toConflictError = (detail: string): TodoUseCaseError => ({
-  type: "Conflict",
-  detail,
-});
-
-const toInternalError = (): TodoUseCaseError => ({
-  type: "InternalError",
-  detail: "Internal server error",
-});
+import {
+  toTodoConflictError,
+  toTodoInternalError,
+  toTodoNotFoundError,
+  toTodoValidationError,
+  type TodoUseCaseError,
+} from "./errors";
+import type { CreateTodoInput, DeleteTodoInput } from "./types";
 
 const hasUniqueConstraint = (errorValue: unknown): boolean => {
   if (typeof errorValue !== "object" || errorValue == null || !("code" in errorValue)) {
@@ -28,6 +18,13 @@ const hasUniqueConstraint = (errorValue: unknown): boolean => {
 
   return typeof errorValue.code === "string" && errorValue.code === "P2002";
 };
+
+const toNameUniqueViolation = (): readonly TodoValidationError[] => [
+  {
+    field: "name",
+    reason: "unique_violation",
+  },
+];
 
 export const createCreateTodoUseCase = (
   dependencies: Readonly<{
@@ -39,7 +36,7 @@ export const createCreateTodoUseCase = (
   return async (input) => {
     if (input.recurrenceType !== "none" && input.dueDate == null) {
       return err(
-        toValidationError([
+        toTodoValidationError([
           {
             field: "dueDate",
             reason: "required",
@@ -51,15 +48,15 @@ export const createCreateTodoUseCase = (
     if (input.parentId != null) {
       const parent = await dependencies.todoRepo.findByIdForOwner(input.parentId, input.userId);
       if (parent == null) {
-        return err(toConflictError("親タスクが存在しません"));
+        return err(toTodoConflictError("親タスクが存在しません"));
       }
 
       if (parent.parentId != null) {
-        return err(toConflictError("サブタスクを親として指定できません"));
+        return err(toTodoConflictError("サブタスクを親として指定できません"));
       }
 
       if (input.recurrenceType !== "none") {
-        return err(toConflictError("サブタスクには繰り返し設定できません"));
+        return err(toTodoConflictError("サブタスクには繰り返し設定できません"));
       }
     }
 
@@ -68,14 +65,7 @@ export const createCreateTodoUseCase = (
       input.name,
     );
     if (duplicated != null) {
-      return err(
-        toValidationError([
-          {
-            field: "name",
-            reason: "unique_violation",
-          },
-        ]),
-      );
+      return err(toTodoValidationError(toNameUniqueViolation()));
     }
 
     const created = await fromPromise(
@@ -91,13 +81,8 @@ export const createCreateTodoUseCase = (
       }),
       (errorValue): TodoUseCaseError =>
         hasUniqueConstraint(errorValue)
-          ? toValidationError([
-              {
-                field: "name",
-                reason: "unique_violation",
-              },
-            ])
-          : toInternalError(),
+          ? toTodoValidationError(toNameUniqueViolation())
+          : toTodoInternalError(),
     );
 
     if (!created.ok) {
@@ -115,5 +100,28 @@ export const createCreateTodoUseCase = (
         totalSubtaskCount,
       }),
     );
+  };
+};
+
+export const createDeleteTodoUseCase = (
+  dependencies: Readonly<{
+    todoRepo: TodoRepoPort;
+  }>,
+): ((input: DeleteTodoInput) => TaskResult<Readonly<{ status: 204 }>, TodoUseCaseError>) => {
+  return async (input) => {
+    const target = await dependencies.todoRepo.findByIdForOwner(input.todoId, input.userId);
+    if (target == null) {
+      return err(toTodoNotFoundError());
+    }
+
+    const deleted = await fromPromise(
+      dependencies.todoRepo.deleteById(input.todoId, input.userId),
+      () => toTodoInternalError(),
+    );
+    if (!deleted.ok) {
+      return err(deleted.error);
+    }
+
+    return ok({ status: 204 as const });
   };
 };
