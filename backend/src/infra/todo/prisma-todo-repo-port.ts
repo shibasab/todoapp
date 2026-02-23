@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient, Todo } from "@prisma/client";
+import { err, ok } from "@todoapp/shared";
 import { toTodoProgressStatus, toTodoRecurrenceType } from "../../domain/todo/normalization";
 import type { TodoItem } from "../../domain/todo/types";
 import type { TodoQuery, TodoRepoPort } from "../../ports/todo-repo-port";
@@ -89,22 +90,39 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
 
     return todo == null ? null : toTodoItem(todo);
   },
-  create: async (input) =>
-    toTodoItem(
-      await client.todo.create({
-        data: {
-          ownerId: input.ownerId,
-          name: input.name,
-          detail: input.detail,
-          dueDate: input.dueDate,
-          progressStatus: input.progressStatus,
-          recurrenceType: input.recurrenceType,
-          parentId: input.parentId,
-          activeName: input.activeName,
-          ...(input.previousTodoId == null ? {} : { previousTodoId: input.previousTodoId }),
-        },
-      }),
-    ),
+  create: async (input) => {
+    try {
+      return ok(
+        toTodoItem(
+          await client.todo.create({
+            data: {
+              ownerId: input.ownerId,
+              name: input.name,
+              detail: input.detail,
+              dueDate: input.dueDate,
+              progressStatus: input.progressStatus,
+              recurrenceType: input.recurrenceType,
+              parentId: input.parentId,
+              activeName: input.activeName,
+              ...(input.previousTodoId == null ? {} : { previousTodoId: input.previousTodoId }),
+            },
+          }),
+        ),
+      );
+    } catch (errorValue) {
+      if (typeof errorValue === "object" && errorValue != null && "code" in errorValue) {
+        if (typeof errorValue.code === "string" && errorValue.code === "P2002") {
+          return err({
+            type: "DuplicateActiveName",
+          });
+        }
+      }
+
+      return err({
+        type: "Unexpected",
+      });
+    }
+  },
   update: async (input) =>
     toTodoItem(
       await client.todo.update({
