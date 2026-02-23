@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { err, mapError, ok, type TaskResult } from "@todoapp/shared";
+import { assertNever } from "../shared/error";
 import { createAuthRepository, type AuthRepository, type RepositoryError } from "./repository";
 import { hashPassword, verifyPassword } from "./password";
 import { createAccessToken, verifyAccessToken } from "./token";
@@ -65,8 +66,16 @@ const internalServerError = (): InternalError => ({
   detail: "Internal server error",
 });
 
-const mapRepositoryErrorToAuthServiceError = (errorValue: RepositoryError): AuthServiceError =>
-  errorValue.type === "DuplicateKey" ? duplicateUsernameError() : internalServerError();
+const mapRepositoryErrorToAuthServiceError = (errorValue: RepositoryError): AuthServiceError => {
+  switch (errorValue.type) {
+    case "DuplicateKey":
+      return duplicateUsernameError();
+    case "Unexpected":
+      return internalServerError();
+    default:
+      return assertNever(errorValue, "RepositoryError.type");
+  }
+};
 
 export const createAuthServiceFromRepository = (
   repository: AuthRepository,
