@@ -23,6 +23,8 @@ const mapCreateErrorToUseCaseError = (errorValue: TodoRepoCreateError): TodoUseC
   switch (errorValue.type) {
     case "DuplicateActiveName":
       return toTodoValidationError(toNameUniqueViolation());
+    case "DuplicatePreviousTodo":
+      return toTodoInternalError();
     case "Unexpected":
       return toTodoInternalError();
     default:

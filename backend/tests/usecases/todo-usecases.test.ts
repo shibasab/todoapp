@@ -1,10 +1,12 @@
+import { err, ok } from "@todoapp/shared";
 import { describe, expect, it } from "vitest";
-import { createCreateTodoUseCase } from "../../src/usecases/todo/create-todo";
-import { createDeleteTodoUseCase } from "../../src/usecases/todo/delete-todo";
-import { createGetTodoUseCase } from "../../src/usecases/todo/get-todo";
-import { createListTodosUseCase } from "../../src/usecases/todo/list-todos";
+import { createGetTodoUseCase, createListTodosUseCase } from "../../src/usecases/todo/read-todos";
 import { createUpdateTodoUseCase } from "../../src/usecases/todo/update-todo";
-import type { TodoRepoPort } from "../../src/ports/todo-repo-port";
+import {
+  createCreateTodoUseCase,
+  createDeleteTodoUseCase,
+} from "../../src/usecases/todo/write-todos";
+import type { TodoRepoCreateError, TodoRepoPort } from "../../src/ports/todo-repo-port";
 import type { TodoItem } from "../../src/domain/todo/types";
 
 const baseTodo = (overrides: Partial<TodoItem> = {}): TodoItem => ({
@@ -25,8 +27,8 @@ const createRepoStub = (overrides: Partial<TodoRepoPort> = {}): TodoRepoPort => 
   const defaultRepo: TodoRepoPort = {
     listByOwner: async () => [baseTodo()],
     findByIdForOwner: async () => baseTodo(),
-    create: async () => baseTodo(),
-    update: async () => baseTodo(),
+    create: async () => ok(baseTodo()),
+    update: async () => ok(baseTodo()),
     deleteById: async () => {
       return;
     },
@@ -97,9 +99,7 @@ describe("todo usecases", () => {
 
     const uniqueUsecase = createCreateTodoUseCase({
       todoRepo: createRepoStub({
-        create: async () => {
-          throw { code: "P2002" };
-        },
+        create: async () => err({ type: "DuplicateActiveName" }),
       }),
     });
     const uniqueResult = await uniqueUsecase({
@@ -213,9 +213,7 @@ describe("todo usecases", () => {
 
     const uniqueErrorUsecase = createUpdateTodoUseCase({
       todoRepo: createRepoStub({
-        runInTransaction: async () => {
-          throw { code: "P2002" };
-        },
+        update: async () => err({ type: "DuplicateActiveName" }),
       }),
       clock: { now: () => new Date("2025-01-01T00:00:00.000Z") },
     });
@@ -236,18 +234,15 @@ describe("todo usecases", () => {
             dueDate: new Date("2025-01-01T00:00:00.000Z"),
           }),
         update: async () =>
-          baseTodo({
-            id: 1,
-            progressStatus: "completed",
-            recurrenceType: "daily",
-            dueDate: new Date("2025-01-01T00:00:00.000Z"),
-          }),
-        create: async () => {
-          throw {
-            code: "P2002",
-            meta: { target: ["previousTodoId"] },
-          };
-        },
+          ok(
+            baseTodo({
+              id: 1,
+              progressStatus: "completed",
+              recurrenceType: "daily",
+              dueDate: new Date("2025-01-01T00:00:00.000Z"),
+            }),
+          ),
+        create: async () => err({ type: "DuplicatePreviousTodo" }),
       }),
       clock: { now: () => new Date("2025-01-01T00:00:00.000Z") },
     });
@@ -275,16 +270,18 @@ describe("todo usecases", () => {
           }),
         update: async (input) => {
           updateInputs.push(input as unknown as Record<string, unknown>);
-          return baseTodo({
-            id: input.id,
-            name: (input.name as string | undefined) ?? "old-name",
-            detail: (input.detail as string | undefined) ?? "old-detail",
-            dueDate: (input.dueDate as Date | undefined) ?? new Date("2025-01-01T00:00:00.000Z"),
-            progressStatus:
-              (input.progressStatus as TodoItem["progressStatus"] | undefined) ?? "in_progress",
-            recurrenceType:
-              (input.recurrenceType as TodoItem["recurrenceType"] | undefined) ?? "daily",
-          });
+          return ok(
+            baseTodo({
+              id: input.id,
+              name: (input.name as string | undefined) ?? "old-name",
+              detail: (input.detail as string | undefined) ?? "old-detail",
+              dueDate: (input.dueDate as Date | undefined) ?? new Date("2025-01-01T00:00:00.000Z"),
+              progressStatus:
+                (input.progressStatus as TodoItem["progressStatus"] | undefined) ?? "in_progress",
+              recurrenceType:
+                (input.recurrenceType as TodoItem["recurrenceType"] | undefined) ?? "daily",
+            }),
+          );
         },
       }),
       clock: { now: () => new Date("2025-01-10T12:00:00.000Z") },
@@ -325,8 +322,8 @@ describe("todo usecases", () => {
     expect(updateInputs[1]).not.toHaveProperty("dueDate");
   });
 
-  it("update: 後続生成時の例外種別を判定して返却する", async () => {
-    const createRecurringTargetRepo = (createError: unknown): TodoRepoPort =>
+  it("update: 後続生成時のrepoエラー種別を判定して返却する", async () => {
+    const createRecurringTargetRepo = (createError: TodoRepoCreateError): TodoRepoPort =>
       createRepoStub({
         findByIdForOwner: async () =>
           baseTodo({
@@ -338,95 +335,62 @@ describe("todo usecases", () => {
             recurrenceType: "daily",
           }),
         update: async () =>
-          baseTodo({
-            id: 7,
-            name: "recurring",
-            detail: "",
-            dueDate: new Date("2025-01-01T00:00:00.000Z"),
-            progressStatus: "completed",
-            recurrenceType: "daily",
-          }),
-        create: async () => {
-          throw createError;
-        },
+          ok(
+            baseTodo({
+              id: 7,
+              name: "recurring",
+              detail: "",
+              dueDate: new Date("2025-01-01T00:00:00.000Z"),
+              progressStatus: "completed",
+              recurrenceType: "daily",
+            }),
+          ),
+        create: async () => err(createError),
       });
 
-    const missingTargetUsecase = createUpdateTodoUseCase({
+    const duplicatedNameUsecase = createUpdateTodoUseCase({
       todoRepo: createRecurringTargetRepo({
-        code: "P2002",
-        meta: {},
+        type: "DuplicateActiveName",
       }),
       clock: { now: () => new Date("2025-01-10T00:00:00.000Z") },
     });
-    const missingTargetResult = await missingTargetUsecase({
+    const duplicatedNameResult = await duplicatedNameUsecase({
       userId: 10,
       todoId: 7,
       progressStatus: "completed",
     });
-    expect(missingTargetResult.ok).toBe(false);
-    if (!missingTargetResult.ok) {
-      expect(missingTargetResult.error.type).toBe("ValidationError");
+    expect(duplicatedNameResult.ok).toBe(false);
+    if (!duplicatedNameResult.ok) {
+      expect(duplicatedNameResult.error.type).toBe("ValidationError");
     }
 
-    const nonArrayTargetUsecase = createUpdateTodoUseCase({
+    const duplicatedPreviousUsecase = createUpdateTodoUseCase({
       todoRepo: createRecurringTargetRepo({
-        code: "P2002",
-        meta: { target: "previousTodoId" },
+        type: "DuplicatePreviousTodo",
       }),
       clock: { now: () => new Date("2025-01-10T00:00:00.000Z") },
     });
-    const nonArrayTargetResult = await nonArrayTargetUsecase({
+    const duplicatedPreviousResult = await duplicatedPreviousUsecase({
       userId: 10,
       todoId: 7,
       progressStatus: "completed",
     });
-    expect(nonArrayTargetResult.ok).toBe(true);
+    expect(duplicatedPreviousResult.ok).toBe(true);
 
-    const nonPreviousUniqueUsecase = createUpdateTodoUseCase({
+    const unexpectedErrorUsecase = createUpdateTodoUseCase({
       todoRepo: createRecurringTargetRepo({
-        code: "P2002",
-        meta: { target: ["name"] },
+        type: "Unexpected",
       }),
       clock: { now: () => new Date("2025-01-10T00:00:00.000Z") },
     });
-    const nonPreviousUniqueResult = await nonPreviousUniqueUsecase({
+    const unexpectedErrorResult = await unexpectedErrorUsecase({
       userId: 10,
       todoId: 7,
       progressStatus: "completed",
     });
-    expect(nonPreviousUniqueResult.ok).toBe(false);
-    if (!nonPreviousUniqueResult.ok) {
-      expect(nonPreviousUniqueResult.error.type).toBe("ValidationError");
-    }
-
-    const nonUniqueErrorUsecase = createUpdateTodoUseCase({
-      todoRepo: createRecurringTargetRepo({
-        code: "P2025",
-      }),
-      clock: { now: () => new Date("2025-01-10T00:00:00.000Z") },
-    });
-    const nonUniqueErrorResult = await nonUniqueErrorUsecase({
-      userId: 10,
-      todoId: 7,
-      progressStatus: "completed",
-    });
-    expect(nonUniqueErrorResult.ok).toBe(false);
-    if (!nonUniqueErrorResult.ok) {
-      expect(nonUniqueErrorResult.error.type).toBe("InternalError");
-    }
-
-    const primitiveErrorUsecase = createUpdateTodoUseCase({
-      todoRepo: createRecurringTargetRepo("plain-error"),
-      clock: { now: () => new Date("2025-01-10T00:00:00.000Z") },
-    });
-    const primitiveErrorResult = await primitiveErrorUsecase({
-      userId: 10,
-      todoId: 7,
-      progressStatus: "completed",
-    });
-    expect(primitiveErrorResult.ok).toBe(false);
-    if (!primitiveErrorResult.ok) {
-      expect(primitiveErrorResult.error.type).toBe("InternalError");
+    expect(unexpectedErrorResult.ok).toBe(false);
+    if (!unexpectedErrorResult.ok) {
+      expect(unexpectedErrorResult.error.type).toBe("InternalError");
     }
   });
 
@@ -448,28 +412,32 @@ describe("todo usecases", () => {
             recurrenceType: "daily",
           }),
         update: async () =>
-          baseTodo({
-            id: 20,
-            name: "daily",
-            detail: "detail",
-            dueDate: new Date("2025-01-01T00:00:00.000Z"),
-            progressStatus: "completed",
-            recurrenceType: "daily",
-          }),
+          ok(
+            baseTodo({
+              id: 20,
+              name: "daily",
+              detail: "detail",
+              dueDate: new Date("2025-01-01T00:00:00.000Z"),
+              progressStatus: "completed",
+              recurrenceType: "daily",
+            }),
+          ),
         create: async (input) => {
           successorInput = {
             dueDate: input.dueDate as Date,
             previousTodoId: input.previousTodoId as number,
           };
-          return baseTodo({
-            id: 21,
-            name: input.name,
-            detail: input.detail,
-            dueDate: input.dueDate,
-            progressStatus: input.progressStatus,
-            recurrenceType: input.recurrenceType,
-            previousTodoId: input.previousTodoId ?? null,
-          });
+          return ok(
+            baseTodo({
+              id: 21,
+              name: input.name,
+              detail: input.detail,
+              dueDate: input.dueDate,
+              progressStatus: input.progressStatus,
+              recurrenceType: input.recurrenceType,
+              previousTodoId: input.previousTodoId ?? null,
+            }),
+          );
         },
       }),
       clock: { now: () => new Date("2025-03-10T15:45:00.000Z") },
@@ -502,17 +470,21 @@ describe("todo usecases", () => {
             recurrenceType: "daily",
           }),
         update: async () =>
-          baseTodo({
-            id: 30,
-            name: "recurring",
-            detail: "",
-            dueDate: new Date("2025-01-01T00:00:00.000Z"),
-            progressStatus: "completed",
-            recurrenceType: "none",
-          }),
+          ok(
+            baseTodo({
+              id: 30,
+              name: "recurring",
+              detail: "",
+              dueDate: new Date("2025-01-01T00:00:00.000Z"),
+              progressStatus: "completed",
+              recurrenceType: "none",
+            }),
+          ),
         create: async () => {
           createCalled += 1;
-          throw new Error("must not be called");
+          return err({
+            type: "Unexpected",
+          });
         },
       }),
       clock: { now: () => new Date("2025-03-10T00:00:00.000Z") },

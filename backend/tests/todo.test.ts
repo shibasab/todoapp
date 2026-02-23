@@ -347,7 +347,7 @@ describe("todo routes", () => {
     }
   });
 
-  it("GET /api/todo/ で keyword/progress_status/due_date フィルタが機能する", async () => {
+  it("GET /api/todo/ で keyword/progressStatus/dueDate フィルタが機能する", async () => {
     const testApp = await setupTodoTestApp();
 
     try {
@@ -385,21 +385,21 @@ describe("todo routes", () => {
       expect(keywordBody).toHaveLength(1);
       expect(keywordBody[0]?.name).toBe("Alpha Task");
 
-      const completedResponse = await testApp.app.request("/api/todo/?progress_status=completed", {
+      const completedResponse = await testApp.app.request("/api/todo/?progressStatus=completed", {
         headers: toAuthHeader(auth.token),
       });
       const completedBody = await readJson<readonly TodoBody[]>(completedResponse);
       expect(completedBody).toHaveLength(1);
       expect(completedBody[0]?.name).toBe("Alpha Task");
 
-      const overdueResponse = await testApp.app.request("/api/todo/?due_date=overdue", {
+      const overdueResponse = await testApp.app.request("/api/todo/?dueDate=overdue", {
         headers: toAuthHeader(auth.token),
       });
       const overdueBody = await readJson<readonly TodoBody[]>(overdueResponse);
       expect(overdueBody).toHaveLength(1);
       expect(overdueBody[0]?.name).toBe("Bravo Task");
 
-      const noneResponse = await testApp.app.request("/api/todo/?due_date=none", {
+      const noneResponse = await testApp.app.request("/api/todo/?dueDate=none", {
         headers: toAuthHeader(auth.token),
       });
       const noneBody = await readJson<readonly TodoBody[]>(noneResponse);

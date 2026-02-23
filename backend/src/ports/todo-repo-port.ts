@@ -42,6 +42,17 @@ export type TodoRepoCreateError =
       type: "DuplicateActiveName";
     }>
   | Readonly<{
+      type: "DuplicatePreviousTodo";
+    }>
+  | Readonly<{
+      type: "Unexpected";
+    }>;
+
+export type TodoRepoUpdateError =
+  | Readonly<{
+      type: "DuplicateActiveName";
+    }>
+  | Readonly<{
       type: "Unexpected";
     }>;
 
@@ -49,7 +60,7 @@ export type TodoRepoPort = Readonly<{
   listByOwner: (query: TodoQuery) => Promise<readonly TodoItem[]>;
   findByIdForOwner: (id: number, ownerId: number) => Promise<TodoItem | null>;
   create: (input: CreateTodoRecordInput) => TaskResult<TodoItem, TodoRepoCreateError>;
-  update: (input: UpdateTodoRecordInput) => Promise<TodoItem>;
+  update: (input: UpdateTodoRecordInput) => TaskResult<TodoItem, TodoRepoUpdateError>;
   deleteById: (id: number, ownerId: number) => Promise<void>;
   countByParentId: (parentId: number, ownerId: number) => Promise<number>;
   countCompletedByParentId: (parentId: number, ownerId: number) => Promise<number>;

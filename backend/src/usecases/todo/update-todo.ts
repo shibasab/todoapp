@@ -1,73 +1,55 @@
 import { err, fromPromise, ok, type TaskResult } from "@todoapp/shared";
 import { toTodoListItem } from "../../domain/todo/assembler";
 import { calculateNextDueDate } from "../../domain/todo/recurrence";
-import type {
-  TodoProgressStatus,
-  TodoRecurrenceType,
-  TodoValidationError,
-} from "../../domain/todo/types";
+import type { TodoProgressStatus, TodoRecurrenceType } from "../../domain/todo/types";
 import type { ClockPort } from "../../ports/clock-port";
-import type { TodoRepoPort } from "../../ports/todo-repo-port";
-import type { TodoUseCaseError } from "./errors";
+import type {
+  TodoRepoCreateError,
+  TodoRepoPort,
+  TodoRepoUpdateError,
+} from "../../ports/todo-repo-port";
+import { assertNever } from "../../shared/error";
+import {
+  toTodoConflictError,
+  toTodoInternalError,
+  toTodoNotFoundError,
+  toTodoValidationError,
+  type TodoUseCaseError,
+} from "./errors";
 import type { UpdateTodoInput } from "./types";
 
-const toValidationError = (errors: readonly TodoValidationError[]): TodoUseCaseError => ({
-  type: "ValidationError",
-  detail: "Validation error",
-  errors,
-});
+const toNameUniqueViolation = () =>
+  toTodoValidationError([
+    {
+      field: "name",
+      reason: "unique_violation",
+    },
+  ]);
 
-const toConflictError = (detail: string): TodoUseCaseError => ({
-  type: "Conflict",
-  detail,
-});
-
-const toNotFoundError = (): TodoUseCaseError => ({
-  type: "NotFound",
-  detail: "Todo not found",
-});
-
-const toInternalError = (): TodoUseCaseError => ({
-  type: "InternalError",
-  detail: "Internal server error",
-});
-
-const hasErrorCode = (
-  errorValue: unknown,
-): errorValue is Readonly<{ code: string; meta?: unknown }> => {
-  if (typeof errorValue !== "object" || errorValue == null || !("code" in errorValue)) {
-    return false;
+const mapUpdateErrorToUseCaseError = (errorValue: TodoRepoUpdateError): TodoUseCaseError => {
+  switch (errorValue.type) {
+    case "DuplicateActiveName":
+      return toNameUniqueViolation();
+    case "Unexpected":
+      return toTodoInternalError();
+    default:
+      return assertNever(errorValue, "TodoRepoUpdateError.type");
   }
-
-  return typeof errorValue.code === "string";
 };
 
-const isUniqueConstraintError = (errorValue: unknown): boolean =>
-  hasErrorCode(errorValue) && errorValue.code === "P2002";
-
-const isPreviousTodoUniqueConstraintError = (errorValue: unknown): boolean => {
-  if (!hasErrorCode(errorValue) || errorValue.code !== "P2002") {
-    return false;
+const mapCreateErrorToUseCaseError = (
+  errorValue: TodoRepoCreateError,
+): Readonly<{ ignore: boolean; error?: TodoUseCaseError }> => {
+  switch (errorValue.type) {
+    case "DuplicatePreviousTodo":
+      return { ignore: true };
+    case "DuplicateActiveName":
+      return { ignore: false, error: toNameUniqueViolation() };
+    case "Unexpected":
+      return { ignore: false, error: toTodoInternalError() };
+    default:
+      return assertNever(errorValue, "TodoRepoCreateError.type");
   }
-
-  if (
-    typeof errorValue.meta !== "object" ||
-    errorValue.meta == null ||
-    !("target" in errorValue.meta)
-  ) {
-    return false;
-  }
-
-  const target = errorValue.meta.target;
-  if (typeof target === "string") {
-    return target === "previousTodoId" || target === "previous_todo_id";
-  }
-
-  if (!Array.isArray(target)) {
-    return false;
-  }
-
-  return target.includes("previousTodoId") || target.includes("previous_todo_id");
 };
 
 const toUtcToday = (now: Date): Date =>
@@ -84,7 +66,7 @@ export const createUpdateTodoUseCase = (
   return async (input) => {
     const target = await dependencies.todoRepo.findByIdForOwner(input.todoId, input.userId);
     if (target == null) {
-      return err(toNotFoundError());
+      return err(toTodoNotFoundError());
     }
 
     const nextDueDate = input.dueDate === undefined ? target.dueDate : input.dueDate;
@@ -93,7 +75,7 @@ export const createUpdateTodoUseCase = (
 
     if (nextRecurrenceType !== "none" && nextDueDate == null) {
       return err(
-        toValidationError([
+        toTodoValidationError([
           {
             field: "dueDate",
             reason: "required",
@@ -103,7 +85,7 @@ export const createUpdateTodoUseCase = (
     }
 
     if (target.parentId != null && nextRecurrenceType !== "none") {
-      return err(toConflictError("サブタスクには繰り返し設定できません"));
+      return err(toTodoConflictError("サブタスクには繰り返し設定できません"));
     }
 
     if (input.name != null) {
@@ -113,14 +95,7 @@ export const createUpdateTodoUseCase = (
         target.id,
       );
       if (duplicated != null) {
-        return err(
-          toValidationError([
-            {
-              field: "name",
-              reason: "unique_violation",
-            },
-          ]),
-        );
+        return err(toNameUniqueViolation());
       }
     }
 
@@ -137,7 +112,7 @@ export const createUpdateTodoUseCase = (
         input.userId,
       );
       if (incompleteSubtask != null) {
-        return err(toConflictError("未完了のサブタスクがあるため完了できません"));
+        return err(toTodoConflictError("未完了のサブタスクがあるため完了できません"));
       }
     }
 
@@ -160,54 +135,48 @@ export const createUpdateTodoUseCase = (
           ...(input.recurrenceType === undefined ? {} : { recurrenceType: input.recurrenceType }),
           activeName: nextProgressStatus === "completed" ? null : nextName,
         });
+        if (!updated.ok) {
+          return err(mapUpdateErrorToUseCaseError(updated.error));
+        }
 
         if (shouldGenerateSuccessor) {
-          try {
-            await transactionRepo.create({
-              ownerId: input.userId,
-              name: updated.name,
-              detail: updated.detail,
-              dueDate: calculateNextDueDate(
-                nextRecurrenceType,
-                toUtcToday(dependencies.clock.now()),
-              ),
-              progressStatus: "not_started",
-              recurrenceType: updated.recurrenceType,
-              parentId: null,
-              previousTodoId: updated.id,
-              activeName: updated.name,
-            });
-          } catch (errorValue) {
-            if (!isPreviousTodoUniqueConstraintError(errorValue)) {
-              throw errorValue;
+          const successor = await transactionRepo.create({
+            ownerId: input.userId,
+            name: updated.data.name,
+            detail: updated.data.detail,
+            dueDate: calculateNextDueDate(nextRecurrenceType, toUtcToday(dependencies.clock.now())),
+            progressStatus: "not_started",
+            recurrenceType: updated.data.recurrenceType,
+            parentId: null,
+            previousTodoId: updated.data.id,
+            activeName: updated.data.name,
+          });
+          if (!successor.ok) {
+            const mapped = mapCreateErrorToUseCaseError(successor.error);
+            if (!mapped.ignore) {
+              return err(mapped.error ?? toTodoInternalError());
             }
           }
         }
 
-        return updated;
+        return ok(updated.data);
       }),
-      (errorValue): TodoUseCaseError =>
-        isUniqueConstraintError(errorValue)
-          ? toValidationError([
-              {
-                field: "name",
-                reason: "unique_violation",
-              },
-            ])
-          : toInternalError(),
+      () => toTodoInternalError(),
     );
-
     if (!updatedResult.ok) {
       return err(updatedResult.error);
     }
+    if (!updatedResult.data.ok) {
+      return err(updatedResult.data.error);
+    }
 
     const [totalSubtaskCount, completedSubtaskCount] = await Promise.all([
-      dependencies.todoRepo.countByParentId(updatedResult.data.id, input.userId),
-      dependencies.todoRepo.countCompletedByParentId(updatedResult.data.id, input.userId),
+      dependencies.todoRepo.countByParentId(updatedResult.data.data.id, input.userId),
+      dependencies.todoRepo.countCompletedByParentId(updatedResult.data.data.id, input.userId),
     ]);
 
     return ok(
-      toTodoListItem(updatedResult.data, {
+      toTodoListItem(updatedResult.data.data, {
         completedSubtaskCount,
         totalSubtaskCount,
       }),
