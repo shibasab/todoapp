@@ -1,4 +1,5 @@
 import type { PrismaClient, User } from "@prisma/client";
+import { fromPromise, type TaskResult } from "@todoapp/shared";
 
 export type CreateUserInput = Readonly<{
   username: string;
@@ -6,11 +7,42 @@ export type CreateUserInput = Readonly<{
   hashedPassword: string;
 }>;
 
+type DuplicateKeyError = Readonly<{
+  type: "DuplicateKey";
+  detail: string;
+}>;
+
+type UnexpectedRepositoryError = Readonly<{
+  type: "Unexpected";
+  detail: string;
+}>;
+
+export type RepositoryError = DuplicateKeyError | UnexpectedRepositoryError;
+
 export type AuthRepository = Readonly<{
   findUserById: (userId: number) => Promise<User | null>;
   findUserByUsername: (username: string) => Promise<User | null>;
-  createUser: (input: CreateUserInput) => Promise<User>;
+  createUser: (input: CreateUserInput) => TaskResult<User, RepositoryError>;
 }>;
+
+const isUniqueConstraintError = (errorValue: unknown): boolean => {
+  if (typeof errorValue !== "object" || errorValue == null || !("code" in errorValue)) {
+    return false;
+  }
+
+  return typeof errorValue.code === "string" && errorValue.code === "P2002";
+};
+
+const mapCreateUserError = (errorValue: unknown): RepositoryError =>
+  isUniqueConstraintError(errorValue)
+    ? {
+        type: "DuplicateKey",
+        detail: "Unique constraint violation",
+      }
+    : {
+        type: "Unexpected",
+        detail: "Unexpected repository error",
+      };
 
 export const createAuthRepository = (prisma: PrismaClient): AuthRepository => ({
   findUserById: async (userId) =>
@@ -26,12 +58,15 @@ export const createAuthRepository = (prisma: PrismaClient): AuthRepository => ({
       },
     }),
   createUser: async (input) =>
-    prisma.user.create({
-      data: {
-        username: input.username,
-        email: input.email,
-        hashedPassword: input.hashedPassword,
-        isActive: true,
-      },
-    }),
+    fromPromise(
+      prisma.user.create({
+        data: {
+          username: input.username,
+          email: input.email,
+          hashedPassword: input.hashedPassword,
+          isActive: true,
+        },
+      }),
+      mapCreateUserError,
+    ),
 });

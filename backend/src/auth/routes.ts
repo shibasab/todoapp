@@ -1,12 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { err, ok, type Result } from "@todoapp/shared";
 import { Hono } from "hono";
-import { createAuthService } from "./service";
+import { createAuthService, type AuthServiceError } from "./service";
 import type { AuthConfig, LoginInput, RegisterInput } from "./types";
 
 export type AuthRouteDependencies = Readonly<{
   prisma: PrismaClient;
   authConfig: AuthConfig;
+  authServiceOverride?: ReturnType<typeof createAuthService>;
 }>;
 
 const parseRecord = (value: unknown): Result<Readonly<Record<string, unknown>>, "invalid_body"> => {
@@ -93,7 +94,26 @@ const readJsonBody = async (
 
 export const createAuthRoutes = (dependencies: AuthRouteDependencies): Hono => {
   const router = new Hono();
-  const authService = createAuthService(dependencies.prisma, dependencies.authConfig);
+  const authService =
+    dependencies.authServiceOverride ??
+    createAuthService(dependencies.prisma, dependencies.authConfig);
+
+  const toRegisterErrorResponse = (
+    errorValue: AuthServiceError,
+  ): Readonly<{ status: 400 | 500; body: Readonly<{ detail: string }> }> =>
+    errorValue.type === "InternalError"
+      ? {
+          status: 500,
+          body: {
+            detail: "Internal server error",
+          },
+        }
+      : {
+          status: 400,
+          body: {
+            detail: errorValue.detail,
+          },
+        };
 
   router.post("/register", async (context) => {
     const rawBody = await readJsonBody(context);
@@ -118,7 +138,8 @@ export const createAuthRoutes = (dependencies: AuthRouteDependencies): Hono => {
 
     const registered = await authService.register(parsedBody.data);
     if (!registered.ok) {
-      return context.json({ detail: registered.error.detail }, 400);
+      const errorResponse = toRegisterErrorResponse(registered.error);
+      return context.json(errorResponse.body, errorResponse.status);
     }
 
     return context.json(registered.data);
