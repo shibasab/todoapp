@@ -1,7 +1,8 @@
 import { err, fromPromise, ok, type TaskResult } from "@todoapp/shared";
 import { toTodoListItem } from "../../domain/todo/assembler";
 import type { TodoValidationError } from "../../domain/todo/types";
-import type { TodoRepoPort } from "../../ports/todo-repo-port";
+import type { TodoRepoCreateError, TodoRepoPort } from "../../ports/todo-repo-port";
+import { assertNever } from "../../shared/error";
 import {
   toTodoConflictError,
   toTodoInternalError,
@@ -11,20 +12,23 @@ import {
 } from "./errors";
 import type { CreateTodoInput, DeleteTodoInput } from "./types";
 
-const hasUniqueConstraint = (errorValue: unknown): boolean => {
-  if (typeof errorValue !== "object" || errorValue == null || !("code" in errorValue)) {
-    return false;
-  }
-
-  return typeof errorValue.code === "string" && errorValue.code === "P2002";
-};
-
 const toNameUniqueViolation = (): readonly TodoValidationError[] => [
   {
     field: "name",
     reason: "unique_violation",
   },
 ];
+
+const mapCreateErrorToUseCaseError = (errorValue: TodoRepoCreateError): TodoUseCaseError => {
+  switch (errorValue.type) {
+    case "DuplicateActiveName":
+      return toTodoValidationError(toNameUniqueViolation());
+    case "Unexpected":
+      return toTodoInternalError();
+    default:
+      return assertNever(errorValue, "TodoRepoCreateError.type");
+  }
+};
 
 export const createCreateTodoUseCase = (
   dependencies: Readonly<{
@@ -68,25 +72,19 @@ export const createCreateTodoUseCase = (
       return err(toTodoValidationError(toNameUniqueViolation()));
     }
 
-    const created = await fromPromise(
-      dependencies.todoRepo.create({
-        ownerId: input.userId,
-        name: input.name,
-        detail: input.detail,
-        dueDate: input.dueDate,
-        progressStatus: input.progressStatus,
-        recurrenceType: input.recurrenceType,
-        parentId: input.parentId,
-        activeName: input.progressStatus === "completed" ? null : input.name,
-      }),
-      (errorValue): TodoUseCaseError =>
-        hasUniqueConstraint(errorValue)
-          ? toTodoValidationError(toNameUniqueViolation())
-          : toTodoInternalError(),
-    );
+    const created = await dependencies.todoRepo.create({
+      ownerId: input.userId,
+      name: input.name,
+      detail: input.detail,
+      dueDate: input.dueDate,
+      progressStatus: input.progressStatus,
+      recurrenceType: input.recurrenceType,
+      parentId: input.parentId,
+      activeName: input.progressStatus === "completed" ? null : input.name,
+    });
 
     if (!created.ok) {
-      return err(created.error);
+      return err(mapCreateErrorToUseCaseError(created.error));
     }
 
     const [totalSubtaskCount, completedSubtaskCount] = await Promise.all([

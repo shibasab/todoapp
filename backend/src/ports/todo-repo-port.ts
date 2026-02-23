@@ -1,3 +1,4 @@
+import type { TaskResult } from "@todoapp/shared";
 import type {
   TodoDueDateFilter,
   TodoItem,
@@ -36,10 +37,18 @@ export type UpdateTodoRecordInput = Readonly<{
   activeName?: string | null;
 }>;
 
+export type TodoRepoCreateError =
+  | Readonly<{
+      type: "DuplicateActiveName";
+    }>
+  | Readonly<{
+      type: "Unexpected";
+    }>;
+
 export type TodoRepoPort = Readonly<{
   listByOwner: (query: TodoQuery) => Promise<readonly TodoItem[]>;
   findByIdForOwner: (id: number, ownerId: number) => Promise<TodoItem | null>;
-  create: (input: CreateTodoRecordInput) => Promise<TodoItem>;
+  create: (input: CreateTodoRecordInput) => TaskResult<TodoItem, TodoRepoCreateError>;
   update: (input: UpdateTodoRecordInput) => Promise<TodoItem>;
   deleteById: (id: number, ownerId: number) => Promise<void>;
   countByParentId: (parentId: number, ownerId: number) => Promise<number>;
