@@ -34,18 +34,14 @@ todoapp/
 
 バックエンドのセットアップ前に、以下をインストールすること。
 
-- Python 3.13+
-- uv
+- Node.js 24+
+- npm
+- Bun（任意。未導入時は `npm` 経由でテスト実行可能）
 
 ```bash
-# Python確認
-python3 --version
-
-# uvインストール（macOS / Linux）
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# uv確認
-uv --version
+# Node.js / npm確認
+node --version
+npm --version
 ```
 
 ### frontend
@@ -67,7 +63,7 @@ Node.js未インストールの場合は公式サイトを参照: https://nodejs
 
 ```bash
 cd backend
-uv sync
+npm install
 ```
 
 ### frontend
@@ -83,7 +79,7 @@ npm install
 
 ```bash
 cd backend
-uv run uvicorn app.main:app --reload --port 8000
+npm run dev
 ```
 
 ### frontend
@@ -102,12 +98,12 @@ npm run dev
 ```bash
 cd backend
 # テスト
-uv run pytest
+npm run test
 # フォーマット
-uv run ruff format
+npm run format
 # 静的解析
-uv run ruff check
-uv run pyrefly check
+npm run lint
+npm run typecheck
 ```
 
 ### frontend
