@@ -11,11 +11,17 @@
     "lint:fix": "oxlint --fix --type-aware -c .oxlintrc.json src",
     "format": "oxfmt src tests vitest.config.ts tsconfig.json package.json",
     "format:check": "oxfmt --check src tests vitest.config.ts tsconfig.json package.json",
+    "pretypecheck": "npm run prisma:generate",
     "typecheck": "tsgo",
+    "pretest": "npm run prisma:generate",
     "test": "bun test || vitest run",
-    "test:coverage": "vitest run --coverage"
+    "pretest:coverage": "npm run prisma:generate",
+    "test:coverage": "vitest run --coverage",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:db:push": "prisma db push --schema prisma/schema.prisma"
   },
   "dependencies": {
+    "@prisma/client": "^6.17.1",
     "@todoapp/shared": "file:../shared",
     "hono": "^4.10.4"
   },
@@ -26,6 +32,7 @@
     "oxfmt": "^0.22.0",
     "oxlint": "^1.38.0",
     "oxlint-tsgolint": "^0.11.0",
+    "prisma": "^6.17.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   },
