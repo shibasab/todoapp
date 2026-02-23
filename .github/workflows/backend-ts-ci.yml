@@ -1,0 +1,56 @@
+name: Backend TypeScript CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "backend/**"
+      - "shared/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/backend-ts-ci.yml"
+
+jobs:
+  backend-ts-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Format check
+        run: bun run --cwd shared format:check
+
+      - name: Lint check
+        run: bun run --cwd shared lint:check
+
+      - name: Type check
+        run: bun run --cwd shared typecheck
+
+      - name: Shared tests
+        run: bun run --cwd shared test
+
+      - name: Backend format check
+        run: bun run --cwd backend format:check
+
+      - name: Backend lint check
+        run: bun run --cwd backend lint:check
+
+      - name: Backend type check
+        run: bun run --cwd backend typecheck
+
+      - name: Unit tests (Bun)
+        run: bun run --cwd backend test
+
+      - name: Coverage check (Vitest)
+        run: bun run --cwd backend test:coverage
