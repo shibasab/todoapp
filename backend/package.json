@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
+    "prelint": "npm run prisma:generate",
     "lint": "oxlint --type-aware -c .oxlintrc.json src",
     "lint:check": "npm run lint",
     "lint:fix": "oxlint --fix --type-aware -c .oxlintrc.json src",
