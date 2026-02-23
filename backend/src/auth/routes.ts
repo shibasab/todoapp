@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { err, ok, type Result } from "@todoapp/shared";
 import { Hono } from "hono";
+import { assertNever } from "../shared/error";
 import { createAuthService, type AuthServiceError } from "./service";
 import type { AuthConfig, LoginInput, RegisterInput } from "./types";
 
@@ -100,20 +101,28 @@ export const createAuthRoutes = (dependencies: AuthRouteDependencies): Hono => {
 
   const toRegisterErrorResponse = (
     errorValue: AuthServiceError,
-  ): Readonly<{ status: 400 | 500; body: Readonly<{ detail: string }> }> =>
-    errorValue.type === "InternalError"
-      ? {
+  ): Readonly<{ status: 400 | 500; body: Readonly<{ detail: string }> }> => {
+    switch (errorValue.type) {
+      case "InternalError":
+        return {
           status: 500,
           body: {
             detail: "Internal server error",
           },
-        }
-      : {
+        };
+      case "DuplicateUsername":
+      case "InvalidCredentials":
+      case "Unauthorized":
+        return {
           status: 400,
           body: {
             detail: errorValue.detail,
           },
         };
+      default:
+        return assertNever(errorValue, "AuthServiceError.type");
+    }
+  };
 
   router.post("/register", async (context) => {
     const rawBody = await readJsonBody(context);

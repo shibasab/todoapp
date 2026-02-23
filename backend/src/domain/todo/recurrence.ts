@@ -1,13 +1,7 @@
 import type { TodoRecurrenceType } from "./types";
+import { assertNever } from "../../shared/error";
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
-
-export class NotExhaustiveError extends Error {
-  constructor(unexpectedValue: never, target: string) {
-    super(`Not exhaustive: ${target} (${String(unexpectedValue)})`);
-    this.name = "NotExhaustiveError";
-  }
-}
 
 export const addOneMonth = (baseDate: Date): Date => {
   const year =
@@ -30,8 +24,7 @@ export const calculateNextDueDate = (recurrenceType: TodoRecurrenceType, baseDat
     case "none":
       return baseDate;
     default: {
-      const exhaustiveCheck: never = recurrenceType;
-      throw new NotExhaustiveError(exhaustiveCheck, "recurrenceType");
+      return assertNever(recurrenceType, "recurrenceType");
     }
   }
 };
