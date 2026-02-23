@@ -20,7 +20,7 @@ export const toTodoListItem = (
     name: todo.name,
     detail: todo.detail,
     dueDate: toDateOnlyString(todo.dueDate),
-    created_at: todo.createdAt.toISOString(),
+    createdAt: todo.createdAt.toISOString(),
     progressStatus: todo.progressStatus,
     recurrenceType: todo.recurrenceType,
     parentId: todo.parentId,

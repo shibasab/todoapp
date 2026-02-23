@@ -20,7 +20,7 @@ type TodoBody = Readonly<{
   name: string;
   detail: string;
   dueDate: string | null;
-  created_at: string;
+  createdAt: string;
   progressStatus: "not_started" | "in_progress" | "completed";
   recurrenceType: "none" | "daily" | "weekly" | "monthly";
   parentId: number | null;
