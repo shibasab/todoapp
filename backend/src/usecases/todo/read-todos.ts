@@ -2,18 +2,8 @@ import { err, fromPromise, ok, type TaskResult } from "@todoapp/shared";
 import { toTodoListItem } from "../../domain/todo/assembler";
 import type { ClockPort } from "../../ports/clock-port";
 import type { TodoRepoPort } from "../../ports/todo-repo-port";
-import type { TodoUseCaseError } from "./errors";
+import { toTodoInternalError, toTodoNotFoundError, type TodoUseCaseError } from "./errors";
 import type { GetTodoInput, ListTodosInput } from "./types";
-
-const toNotFoundError = (): TodoUseCaseError => ({
-  type: "NotFound",
-  detail: "Todo not found",
-});
-
-const toInternalError = (): TodoUseCaseError => ({
-  type: "InternalError",
-  detail: "Internal server error",
-});
 
 const normalizeKeyword = (keyword: string | undefined): string =>
   keyword == null ? "" : keyword.trim();
@@ -58,7 +48,7 @@ export const createListTodosUseCase = (
 
         return responses;
       })(),
-      () => toInternalError(),
+      () => toTodoInternalError(),
     );
 
     return execution.ok ? ok(execution.data) : err(execution.error);
@@ -75,7 +65,7 @@ export const createGetTodoUseCase = (
       (async () => {
         const todo = await dependencies.todoRepo.findByIdForOwner(input.todoId, input.userId);
         if (todo == null) {
-          return err(toNotFoundError());
+          return err(toTodoNotFoundError());
         }
 
         const [totalSubtaskCount, completedSubtaskCount] = await Promise.all([
@@ -90,7 +80,7 @@ export const createGetTodoUseCase = (
           }),
         );
       })(),
-      () => toInternalError(),
+      () => toTodoInternalError(),
     );
 
     if (!execution.ok) {
