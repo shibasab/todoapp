@@ -2,8 +2,8 @@ import type { TodoItem, TodoProgressStatus } from "../domain/todo/types";
 
 export type TodoQuery = Readonly<{
   ownerId: number;
+  now: Date;
   progressStatus?: TodoProgressStatus;
-  keyword?: string;
   dueDateFilter?: "all" | "today" | "this_week" | "overdue" | "none";
 }>;
 
