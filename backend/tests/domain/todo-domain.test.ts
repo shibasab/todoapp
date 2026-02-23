@@ -29,6 +29,13 @@ describe("todo domain functions", () => {
     expect(next.toISOString()).toBe("2024-02-29T00:00:00.000Z");
   });
 
+  it("monthlyの次回日付は12月を跨ぐ場合に翌年1月へ進む", () => {
+    const baseDate = new Date("2025-12-31T00:00:00.000Z");
+    const next = calculateNextDueDate("monthly", baseDate);
+
+    expect(next.toISOString()).toBe("2026-01-31T00:00:00.000Z");
+  });
+
   it("daily/weekly/noneの次回日付を算出する", () => {
     const baseDate = new Date("2025-02-10T00:00:00.000Z");
 

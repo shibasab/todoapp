@@ -65,6 +65,30 @@ const toDueDateFilterWhere = (
   }
 };
 
+const hasErrorCode = (
+  errorValue: unknown,
+): errorValue is Readonly<{
+  code: string;
+  meta?: Readonly<{ target?: string | readonly string[] }>;
+}> => typeof errorValue === "object" && errorValue != null && "code" in errorValue;
+
+const isDuplicatePreviousTodoError = (errorValue: unknown): boolean => {
+  if (!hasErrorCode(errorValue) || errorValue.code !== "P2002") {
+    return false;
+  }
+
+  const target = errorValue.meta?.target;
+  if (typeof target === "string") {
+    return target === "previousTodoId" || target === "previous_todo_id";
+  }
+
+  if (Array.isArray(target)) {
+    return target.includes("previousTodoId") || target.includes("previous_todo_id");
+  }
+
+  return false;
+};
+
 const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
   listByOwner: async (query) => {
     const todos = await client.todo.findMany({
@@ -110,12 +134,16 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         ),
       );
     } catch (errorValue) {
-      if (typeof errorValue === "object" && errorValue != null && "code" in errorValue) {
-        if (typeof errorValue.code === "string" && errorValue.code === "P2002") {
-          return err({
-            type: "DuplicateActiveName",
-          });
-        }
+      if (isDuplicatePreviousTodoError(errorValue)) {
+        return err({
+          type: "DuplicatePreviousTodo",
+        });
+      }
+
+      if (hasErrorCode(errorValue) && errorValue.code === "P2002") {
+        return err({
+          type: "DuplicateActiveName",
+        });
       }
 
       return err({
@@ -123,22 +151,41 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
       });
     }
   },
-  update: async (input) =>
-    toTodoItem(
-      await client.todo.update({
-        where: {
-          id: input.id,
-        },
-        data: {
-          ...(input.name === undefined ? {} : { name: input.name }),
-          ...(input.detail === undefined ? {} : { detail: input.detail }),
-          ...(input.dueDate === undefined ? {} : { dueDate: input.dueDate }),
-          ...(input.progressStatus === undefined ? {} : { progressStatus: input.progressStatus }),
-          ...(input.recurrenceType === undefined ? {} : { recurrenceType: input.recurrenceType }),
-          ...(input.activeName === undefined ? {} : { activeName: input.activeName }),
-        },
-      }),
-    ),
+  update: async (input) => {
+    try {
+      return ok(
+        toTodoItem(
+          await client.todo.update({
+            where: {
+              id: input.id,
+            },
+            data: {
+              ...(input.name === undefined ? {} : { name: input.name }),
+              ...(input.detail === undefined ? {} : { detail: input.detail }),
+              ...(input.dueDate === undefined ? {} : { dueDate: input.dueDate }),
+              ...(input.progressStatus === undefined
+                ? {}
+                : { progressStatus: input.progressStatus }),
+              ...(input.recurrenceType === undefined
+                ? {}
+                : { recurrenceType: input.recurrenceType }),
+              ...(input.activeName === undefined ? {} : { activeName: input.activeName }),
+            },
+          }),
+        ),
+      );
+    } catch (errorValue) {
+      if (hasErrorCode(errorValue) && errorValue.code === "P2002") {
+        return err({
+          type: "DuplicateActiveName",
+        });
+      }
+
+      return err({
+        type: "Unexpected",
+      });
+    }
+  },
   deleteById: async (id, ownerId) => {
     const target = await client.todo.findFirst({
       where: {
@@ -224,4 +271,13 @@ export const createPrismaTodoRepoPort = (prisma: PrismaClient): TodoRepoPort =>
   createRepo({
     todo: prisma.todo,
     $transaction: prisma.$transaction.bind(prisma),
+  });
+
+export const createPrismaTodoRepoPortForTesting = (
+  client: Readonly<{
+    todo: PrismaClient["todo"];
+  }>,
+): TodoRepoPort =>
+  createRepo({
+    todo: client.todo,
   });
