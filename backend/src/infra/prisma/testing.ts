@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PrismaClient } from "@prisma/client";
 import { err, ok, type TaskResult } from "@todoapp/shared";
+import { createPrismaClient } from "./client";
 
 export type TemporarySqliteDatabase = Readonly<{
   databaseUrl: string;
@@ -109,12 +109,4 @@ export const ensureSqliteSchema = async (
   });
 };
 
-export const createPrismaClient = (databaseUrl: string): PrismaClient => {
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
-  });
-};
+export { createPrismaClient };

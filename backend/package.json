@@ -23,7 +23,9 @@
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "@todoapp/shared": "file:../shared",
-    "hono": "^4.10.4"
+    "bcryptjs": "^3.0.3",
+    "hono": "^4.10.4",
+    "jose": "^6.1.2"
   },
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20250626",
