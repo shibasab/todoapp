@@ -225,3 +225,12 @@ export const createPrismaTodoRepoPort = (prisma: PrismaClient): TodoRepoPort =>
     todo: prisma.todo,
     $transaction: prisma.$transaction.bind(prisma),
   });
+
+export const createPrismaTodoRepoPortForTesting = (
+  client: Readonly<{
+    todo: PrismaClient["todo"];
+  }>,
+): TodoRepoPort =>
+  createRepo({
+    todo: client.todo,
+  });

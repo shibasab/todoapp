@@ -163,6 +163,29 @@ describe("todo write basic api", () => {
     }
   });
 
+  it("POST /api/todo/ は不正JWTで401を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const response = await testApp.app.request(
+        createJsonRequest("/api/todo/", {
+          name: "invalid-token-task",
+        }),
+        {
+          headers: {
+            Authorization: "Bearer invalid.token.value",
+          },
+        },
+      );
+      const body = await readJson<ErrorBody>(response);
+
+      expect(response.status).toBe(401);
+      expect(body.detail).toBe("Could not validate credentials");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("POST /api/todo/ は繰り返し指定時にdueDate必須", async () => {
     const testApp = await setupTodoTestApp();
 
@@ -223,6 +246,55 @@ describe("todo write basic api", () => {
     }
   });
 
+  it("POST /api/todo/ は不正ボディ形式で422を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(testApp.app, "todo-invalid-user", "todo-invalid@example.com");
+      const response = await testApp.app.request(
+        createJsonRequest("/api/todo/", {
+          name: 123,
+        }),
+        {
+          headers: toAuthHeader(auth.token),
+        },
+      );
+      const body = await readJson<ValidationErrorBody>(response);
+
+      expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("POST /api/todo/ は配列ボディを422で拒否し、field=bodyを返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(testApp.app, "todo-array-user", "todo-array@example.com");
+      const response = await testApp.app.request(
+        createJsonRequest("/api/todo/", [
+          {
+            name: "invalid",
+          },
+        ]),
+        {
+          headers: toAuthHeader(auth.token),
+        },
+      );
+      const body = await readJson<ValidationErrorBody>(response);
+
+      expect(response.status).toBe(422);
+      expect(body.errors).toContainEqual({
+        field: "body",
+        reason: "invalid_format",
+      });
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("DELETE /api/todo/{id} で削除できる", async () => {
     const testApp = await setupTodoTestApp();
 
@@ -252,6 +324,72 @@ describe("todo write basic api", () => {
         },
       });
       expect(found).toBeNull();
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("DELETE /api/todo/{id} は不正JWTで401を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const response = await testApp.app.request("/api/todo/1/", {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer invalid.token.value",
+        },
+      });
+      const body = await readJson<ErrorBody>(response);
+
+      expect(response.status).toBe(401);
+      expect(body.detail).toBe("Could not validate credentials");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("DELETE /api/todo/{id} は認証なしで401を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const response = await testApp.app.request("/api/todo/1/", {
+        method: "DELETE",
+      });
+      const body = await readJson<ErrorBody>(response);
+
+      expect(response.status).toBe(401);
+      expect(body.detail).toBe("Could not validate credentials");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("DELETE /api/todo/{id} は不正IDと未存在IDで404を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(
+        testApp.app,
+        "todo-delete-notfound-user",
+        "todo-delete-notfound@example.com",
+      );
+
+      const invalidIdResponse = await testApp.app.request("/api/todo/invalid/", {
+        method: "DELETE",
+        headers: toAuthHeader(auth.token),
+      });
+      const invalidIdBody = await readJson<ErrorBody>(invalidIdResponse);
+
+      const notFoundResponse = await testApp.app.request("/api/todo/999999/", {
+        method: "DELETE",
+        headers: toAuthHeader(auth.token),
+      });
+      const notFoundBody = await readJson<ErrorBody>(notFoundResponse);
+
+      expect(invalidIdResponse.status).toBe(404);
+      expect(invalidIdBody.detail).toBe("Todo not found");
+      expect(notFoundResponse.status).toBe(404);
+      expect(notFoundBody.detail).toBe("Todo not found");
     } finally {
       await testApp.cleanup();
     }
