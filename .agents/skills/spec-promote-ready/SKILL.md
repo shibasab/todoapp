@@ -58,7 +58,7 @@ BacklogのIdeaを、実装着手可能なSpec（Ready）として `specs/NNN_fea
 
 ### 4. Run spec review agent and refine spec
 
-- 作成した`spec.md` の仕様に関して複数観点でレビューを実施する
+- 作成した`spec.md` の仕様に関して複数観点でレビューを実施する（可能ならレビュー専用エージェントを立てる）
   - **UX/UI観点**: `ux-psychology` スキルを使用する
 - レビュー結果を `specs/<NNN>_<feature>/design-review.md` に記録する
   - 最低限含める項目:
