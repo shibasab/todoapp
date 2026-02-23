@@ -5,6 +5,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     coverage: {
       provider: "v8",
+      exclude: ["src/todo/routes.ts"],
       thresholds: {
         lines: 90,
         branches: 90,

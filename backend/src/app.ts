@@ -4,6 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 import { createAuthRoutes } from "./auth/routes";
 import type { AuthConfig } from "./auth/types";
 import { createPrismaClient, resolveDatabaseUrl } from "./infra/prisma/client";
+import { createTodoRoutes } from "./todo/routes";
 
 const buildHealthResponse = (): HealthResponse => ({
   status: "ok",
@@ -44,13 +45,14 @@ const createDefaultDependencies = (): AppDependencies => {
 };
 
 export const createApp = (dependencies: AppDependencies = createDefaultDependencies()): Hono => {
-  const app = new Hono();
+  const app = new Hono({ strict: false });
 
   app.get("/health", (context) => {
     return context.json(buildHealthResponse());
   });
 
   app.route("/api/auth", createAuthRoutes(dependencies));
+  app.route("/api/todo", createTodoRoutes(dependencies));
 
   return app;
 };

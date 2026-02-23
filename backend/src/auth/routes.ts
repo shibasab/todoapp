@@ -93,7 +93,7 @@ const readJsonBody = async (
 };
 
 export const createAuthRoutes = (dependencies: AuthRouteDependencies): Hono => {
-  const router = new Hono();
+  const router = new Hono({ strict: false });
   const authService =
     dependencies.authServiceOverride ??
     createAuthService(dependencies.prisma, dependencies.authConfig);

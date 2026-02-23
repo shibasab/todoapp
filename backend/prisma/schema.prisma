@@ -7,12 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TodoProgressStatus {
+  not_started
+  in_progress
+  completed
+}
+
+enum TodoRecurrenceType {
+  none
+  daily
+  weekly
+  monthly
+}
+
 model User {
   id             Int     @id @default(autoincrement())
   username       String  @unique
   email          String  @default("")
   hashedPassword String  @map("hashed_password")
   isActive       Boolean @default(true) @map("is_active")
+  todos          Todo[]
 
   @@map("users")
+}
+
+model Todo {
+  id             Int      @id @default(autoincrement())
+  name           String
+  detail         String   @default("")
+  createdAt      DateTime @default(now()) @map("created_at")
+  ownerId        Int      @map("owner_id")
+  dueDate        DateTime? @map("due_date")
+  progressStatus TodoProgressStatus @default(not_started) @map("progress_status")
+  recurrenceType TodoRecurrenceType @default(none) @map("recurrence_type")
+  previousTodoId Int?     @unique @map("previous_todo_id")
+  parentId       Int?     @map("parent_id")
+  activeName     String?  @map("active_name")
+
+  owner        User  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  previousTodo Todo? @relation("TodoPrevious", fields: [previousTodoId], references: [id], onDelete: SetNull)
+  nextTodo     Todo? @relation("TodoPrevious")
+  parent       Todo? @relation("TodoParent", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks     Todo[] @relation("TodoParent")
+
+  @@index([ownerId, progressStatus, createdAt], map: "ix_todo_owner_progress_status_created_at")
+  @@index([parentId], map: "idx_todos_parent_id")
+  @@unique([ownerId, activeName], map: "ux_todo_owner_active_name")
+  @@map("todos")
 }
