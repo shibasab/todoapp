@@ -1,10 +1,10 @@
 import { err, ok } from "@todoapp/shared";
 import { describe, expect, it } from "vitest";
 import { createGetTodoUseCase, createListTodosUseCase } from "../../src/usecases/todo/read-todos";
-import { createUpdateTodoUseCase } from "../../src/usecases/todo/update-todo";
 import {
   createCreateTodoUseCase,
   createDeleteTodoUseCase,
+  createUpdateTodoUseCase,
 } from "../../src/usecases/todo/write-todos";
 import type { TodoRepoCreateError, TodoRepoPort } from "../../src/ports/todo-repo-port";
 import type { TodoItem } from "../../src/domain/todo/types";

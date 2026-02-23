@@ -5,9 +5,12 @@ import type { AuthConfig } from "../../auth/types";
 import { createPrismaTodoRepoPort } from "../../infra/todo/prisma-todo-repo-port";
 import { systemClock } from "../../ports/clock-port";
 import { createGetTodoUseCase, createListTodosUseCase } from "../../usecases/todo/read-todos";
-import { createCreateTodoUseCase, createDeleteTodoUseCase } from "../../usecases/todo/write-todos";
+import {
+  createCreateTodoUseCase,
+  createDeleteTodoUseCase,
+  createUpdateTodoUseCase,
+} from "../../usecases/todo/write-todos";
 import { toTodoValidationError, type TodoUseCaseError } from "../../usecases/todo/errors";
-import { createUpdateTodoUseCase } from "../../usecases/todo/update-todo";
 import {
   createTodoBodySchema,
   listTodoQuerySchema,
