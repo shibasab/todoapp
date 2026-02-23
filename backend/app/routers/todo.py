@@ -10,6 +10,7 @@ from app.exceptions import (
     NotFoundError,
     InvalidParentTodoError,
     ParentTodoCompletionBlockedError,
+    SubtaskRecurrenceNotAllowedError,
 )
 
 router = APIRouter()
@@ -54,7 +55,7 @@ def create_todo(
             current_user.id,  # pyrefly: ignore[bad-argument-type]
         )
         return TodoResponse.model_validate(todo)
-    except InvalidParentTodoError as e:
+    except (InvalidParentTodoError, SubtaskRecurrenceNotAllowedError) as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
 
@@ -92,7 +93,7 @@ def update_todo(
         return TodoResponse.model_validate(todo)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ParentTodoCompletionBlockedError as e:
+    except (ParentTodoCompletionBlockedError, SubtaskRecurrenceNotAllowedError) as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
 

@@ -44,3 +44,9 @@ class ParentTodoCompletionBlockedError(AppError):
     """未完了サブタスクが存在して親タスクを完了できない場合のエラー"""
 
     pass
+
+
+class SubtaskRecurrenceNotAllowedError(AppError):
+    """サブタスクに繰り返し設定を指定した場合のエラー"""
+
+    pass

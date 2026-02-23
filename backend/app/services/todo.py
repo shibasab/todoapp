@@ -17,6 +17,7 @@ from app.exceptions import (
     RequiredFieldError,
     InvalidParentTodoError,
     ParentTodoCompletionBlockedError,
+    SubtaskRecurrenceNotAllowedError,
 )
 
 
@@ -66,8 +67,12 @@ class TodoService:
     ) -> ValidatedTodoData:
         """TODOデータのバリデーションを行い、バリデーション済みデータを返す"""
         self._validate_recurrence_due_date(data.due_date, data.recurrence_type)
-        self._ensure_name_unique(owner_id, data.name, exclude_id=exclude_id)
         self._validate_parent(owner_id, data.parent_id)
+        self._validate_subtask_recurrence(
+            is_subtask=data.parent_id is not None,
+            recurrence_type=data.recurrence_type,
+        )
+        self._ensure_name_unique(owner_id, data.name, exclude_id=exclude_id)
         return ValidatedTodoData(data)
 
     def _validate_parent(self, owner_id: int, parent_id: int | None) -> Todo | None:
@@ -80,6 +85,16 @@ class TodoService:
         if parent.parent_id is not None:
             raise InvalidParentTodoError("サブタスクを親として指定できません")
         return parent
+
+    def _validate_subtask_recurrence(
+        self,
+        is_subtask: bool,
+        recurrence_type: TodoRecurrenceType,
+    ) -> None:
+        if is_subtask and recurrence_type != "none":
+            raise SubtaskRecurrenceNotAllowedError(
+                "サブタスクには繰り返し設定できません"
+            )
 
     def _validate_update(
         self, owner_id: int, data: TodoUpdate, todo: Todo, exclude_id: int
@@ -99,6 +114,10 @@ class TodoService:
             else todo.recurrence_type,
         )
         self._validate_recurrence_due_date(due_date, recurrence_type)
+        self._validate_subtask_recurrence(
+            is_subtask=todo.parent_id is not None,
+            recurrence_type=recurrence_type,
+        )
 
         if self._is_transitioning_to_completed(todo, data):
             self._validate_parent_completion(todo, owner_id)
