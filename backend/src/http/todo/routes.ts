@@ -4,9 +4,11 @@ import { createAuthService } from "../../auth/service";
 import type { AuthConfig } from "../../auth/types";
 import { createPrismaTodoRepoPort } from "../../infra/todo/prisma-todo-repo-port";
 import { systemClock } from "../../ports/clock-port";
+import { createCreateTodoUseCase } from "../../usecases/todo/create-todo";
+import { createDeleteTodoUseCase } from "../../usecases/todo/delete-todo";
 import { createGetTodoUseCase, createListTodosUseCase } from "../../usecases/todo/read-todos";
 import { toTodoValidationError, type TodoUseCaseError } from "../../usecases/todo/errors";
-import { listTodoQuerySchema, todoIdParamSchema } from "./schemas";
+import { createTodoBodySchema, listTodoQuerySchema, todoIdParamSchema } from "./schemas";
 import { toTodoHttpError } from "./to-http-error";
 
 export type TodoHttpRouteDependencies = Readonly<{
@@ -18,6 +20,20 @@ type JsonResponder = Readonly<{
   json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response;
 }>;
 
+const toDateOrNull = (dateValue: string | null | undefined): Date | null => {
+  if (dateValue == null) {
+    return null;
+  }
+
+  return new Date(`${dateValue}T00:00:00.000Z`);
+};
+
+const readValidationField = (errorValue: {
+  issues: readonly { path: readonly unknown[] }[];
+}): string => {
+  const field = errorValue.issues[0]?.path[0];
+  return typeof field === "string" ? field : "body";
+};
 export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): Hono => {
   const router = new Hono({ strict: false });
   const authService = createAuthService(dependencies.prisma, dependencies.authConfig);
@@ -27,6 +43,12 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
     clock: systemClock,
   });
   const getTodo = createGetTodoUseCase({
+    todoRepo,
+  });
+  const createTodo = createCreateTodoUseCase({
+    todoRepo,
+  });
+  const deleteTodo = createDeleteTodoUseCase({
     todoRepo,
   });
 
@@ -75,6 +97,54 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
     return context.json(result.data);
   });
 
+  router.post("/", async (context) => {
+    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    if (!authenticated.ok) {
+      return context.json({ detail: authenticated.error.detail }, 401);
+    }
+
+    const rawBody = await context.req.json().catch(() => null);
+    if (rawBody == null) {
+      return respondError(
+        context,
+        toTodoValidationError([
+          {
+            field: "body",
+            reason: "invalid_format",
+          },
+        ]),
+      );
+    }
+
+    const parsedBody = createTodoBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return respondError(
+        context,
+        toTodoValidationError([
+          {
+            field: readValidationField(parsedBody.error),
+            reason: "invalid_format",
+          },
+        ]),
+      );
+    }
+
+    const result = await createTodo({
+      userId: authenticated.data.id,
+      name: parsedBody.data.name,
+      detail: parsedBody.data.detail,
+      dueDate: toDateOrNull(parsedBody.data.dueDate),
+      progressStatus: parsedBody.data.progressStatus,
+      recurrenceType: parsedBody.data.recurrenceType,
+      parentId: parsedBody.data.parentId,
+    });
+    if (!result.ok) {
+      return respondError(context, result.error);
+    }
+
+    return context.json(result.data, 201);
+  });
+
   router.get("/:todoId", async (context) => {
     const authenticated = await authService.authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
@@ -95,6 +165,30 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
     }
 
     return context.json(result.data);
+  });
+
+  router.delete("/:todoId", async (context) => {
+    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    if (!authenticated.ok) {
+      return context.json({ detail: authenticated.error.detail }, 401);
+    }
+
+    const parsedParams = todoIdParamSchema.safeParse(context.req.param());
+    if (!parsedParams.success) {
+      return context.json({ detail: "Todo not found" }, 404);
+    }
+
+    const result = await deleteTodo({
+      userId: authenticated.data.id,
+      todoId: parsedParams.data.todoId,
+    });
+    if (!result.ok) {
+      return respondError(context, result.error);
+    }
+
+    return new Response(null, {
+      status: result.data.status,
+    });
   });
 
   return router;

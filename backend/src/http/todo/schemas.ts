@@ -4,8 +4,20 @@ export const todoIdParamSchema = z.object({
   todoId: z.coerce.number().int().positive(),
 });
 
+const isValidDateOnly = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const dateValue = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(dateValue.getTime()) && dateValue.toISOString().slice(0, 10) === value;
+};
+
 const optionalDateString = z
   .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()])
+  .refine((value) => value == null || isValidDateOnly(value), {
+    message: "invalid_date",
+  })
   .optional()
   .transform((value) => (value === undefined ? undefined : value));
 
