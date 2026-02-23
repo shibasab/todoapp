@@ -212,6 +212,99 @@ describe("todo read api", () => {
     }
   });
 
+  it("GET /api/todo/ は due_date の各フィルタで絞り込める", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(
+        testApp.app,
+        "todo-due-filter-user",
+        "todo-due-filter@example.com",
+      );
+
+      await testApp.prisma.todo.createMany({
+        data: [
+          {
+            ownerId: auth.user.id,
+            name: "today task",
+            detail: "",
+            progressStatus: "in_progress",
+            recurrenceType: "none",
+            dueDate: toUtcDate(0),
+            activeName: "today task",
+          },
+          {
+            ownerId: auth.user.id,
+            name: "week task",
+            detail: "",
+            progressStatus: "in_progress",
+            recurrenceType: "none",
+            dueDate: toUtcDate(6),
+            activeName: "week task",
+          },
+          {
+            ownerId: auth.user.id,
+            name: "next week task",
+            detail: "",
+            progressStatus: "in_progress",
+            recurrenceType: "none",
+            dueDate: toUtcDate(8),
+            activeName: "next week task",
+          },
+          {
+            ownerId: auth.user.id,
+            name: "overdue task",
+            detail: "",
+            progressStatus: "in_progress",
+            recurrenceType: "none",
+            dueDate: toUtcDate(-1),
+            activeName: "overdue task",
+          },
+          {
+            ownerId: auth.user.id,
+            name: "none task",
+            detail: "",
+            progressStatus: "in_progress",
+            recurrenceType: "none",
+            dueDate: null,
+            activeName: "none task",
+          },
+        ],
+      });
+
+      const thisWeekResponse = await testApp.app.request("/api/todo/?due_date=this_week", {
+        method: "GET",
+        headers: toAuthHeader(auth.token),
+      });
+      const thisWeekBody = await readJson<readonly TodoBody[]>(thisWeekResponse);
+
+      const overdueResponse = await testApp.app.request("/api/todo/?due_date=overdue", {
+        method: "GET",
+        headers: toAuthHeader(auth.token),
+      });
+      const overdueBody = await readJson<readonly TodoBody[]>(overdueResponse);
+
+      const noneResponse = await testApp.app.request("/api/todo/?due_date=none", {
+        method: "GET",
+        headers: toAuthHeader(auth.token),
+      });
+      const noneBody = await readJson<readonly TodoBody[]>(noneResponse);
+
+      expect(thisWeekResponse.status).toBe(200);
+      expect(thisWeekBody.map((todo) => todo.name)).toContain("today task");
+      expect(thisWeekBody.map((todo) => todo.name)).toContain("week task");
+      expect(thisWeekBody.map((todo) => todo.name)).not.toContain("next week task");
+
+      expect(overdueResponse.status).toBe(200);
+      expect(overdueBody.map((todo) => todo.name)).toEqual(["overdue task"]);
+
+      expect(noneResponse.status).toBe(200);
+      expect(noneBody.map((todo) => todo.name)).toEqual(["none task"]);
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("GET /api/todo/ は不正due_dateで422を返す", async () => {
     const testApp = await setupTodoTestApp();
 

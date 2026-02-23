@@ -25,43 +25,43 @@ const toDueDateFilterWhere = (
   dueDateFilter: TodoQuery["dueDateFilter"],
   now: Date,
 ): Prisma.TodoWhereInput => {
-  if (dueDateFilter == null || dueDateFilter === "all") {
-    return {};
-  }
-
   const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
   const weekEnd = new Date(todayStart.getTime() + 6 * 24 * 60 * 60 * 1000);
 
-  if (dueDateFilter === "today") {
-    return {
-      dueDate: {
-        gte: todayStart,
-        lt: tomorrowStart,
-      },
-    };
+  switch (dueDateFilter) {
+    case undefined:
+    case "all":
+      return {};
+    case "today":
+      return {
+        dueDate: {
+          gte: todayStart,
+          lt: tomorrowStart,
+        },
+      };
+    case "this_week":
+      return {
+        dueDate: {
+          gte: todayStart,
+          lte: weekEnd,
+        },
+      };
+    case "overdue":
+      return {
+        dueDate: {
+          lt: todayStart,
+        },
+      };
+    case "none":
+      return {
+        dueDate: null,
+      };
+    default: {
+      const exhaustiveCheck: never = dueDateFilter;
+      throw new Error(`Not exhaustive: dueDateFilter (${String(exhaustiveCheck)})`);
+    }
   }
-
-  if (dueDateFilter === "this_week") {
-    return {
-      dueDate: {
-        gte: todayStart,
-        lte: weekEnd,
-      },
-    };
-  }
-
-  if (dueDateFilter === "overdue") {
-    return {
-      dueDate: {
-        lt: todayStart,
-      },
-    };
-  }
-
-  return {
-    dueDate: null,
-  };
 };
 
 const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
