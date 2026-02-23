@@ -61,12 +61,12 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
     const result = await listTodos({
       userId: authenticated.data.id,
       ...(parsedQuery.data.keyword === undefined ? {} : { keyword: parsedQuery.data.keyword }),
-      ...(parsedQuery.data.progress_status === undefined
+      ...(parsedQuery.data.progressStatus === undefined
         ? {}
-        : { progressStatus: parsedQuery.data.progress_status }),
-      ...(parsedQuery.data.due_date === undefined
+        : { progressStatus: parsedQuery.data.progressStatus }),
+      ...(parsedQuery.data.dueDate === undefined
         ? {}
-        : { dueDateFilter: parsedQuery.data.due_date }),
+        : { dueDateFilter: parsedQuery.data.dueDate }),
     });
     if (!result.ok) {
       return respondError(context, result.error);

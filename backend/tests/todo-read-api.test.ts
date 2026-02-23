@@ -195,7 +195,7 @@ describe("todo read api", () => {
       });
 
       const response = await testApp.app.request(
-        "/api/todo/?keyword=%&progress_status=in_progress&due_date=today",
+        "/api/todo/?keyword=%&progressStatus=in_progress&dueDate=today",
         {
           method: "GET",
           headers: toAuthHeader(auth.token),
@@ -212,7 +212,7 @@ describe("todo read api", () => {
     }
   });
 
-  it("GET /api/todo/ は due_date の各フィルタで絞り込める", async () => {
+  it("GET /api/todo/ は dueDate の各フィルタで絞り込める", async () => {
     const testApp = await setupTodoTestApp();
 
     try {
@@ -272,19 +272,19 @@ describe("todo read api", () => {
         ],
       });
 
-      const thisWeekResponse = await testApp.app.request("/api/todo/?due_date=this_week", {
+      const thisWeekResponse = await testApp.app.request("/api/todo/?dueDate=this_week", {
         method: "GET",
         headers: toAuthHeader(auth.token),
       });
       const thisWeekBody = await readJson<readonly TodoBody[]>(thisWeekResponse);
 
-      const overdueResponse = await testApp.app.request("/api/todo/?due_date=overdue", {
+      const overdueResponse = await testApp.app.request("/api/todo/?dueDate=overdue", {
         method: "GET",
         headers: toAuthHeader(auth.token),
       });
       const overdueBody = await readJson<readonly TodoBody[]>(overdueResponse);
 
-      const noneResponse = await testApp.app.request("/api/todo/?due_date=none", {
+      const noneResponse = await testApp.app.request("/api/todo/?dueDate=none", {
         method: "GET",
         headers: toAuthHeader(auth.token),
       });
@@ -305,12 +305,12 @@ describe("todo read api", () => {
     }
   });
 
-  it("GET /api/todo/ は不正due_dateで422を返す", async () => {
+  it("GET /api/todo/ は不正dueDateで422を返す", async () => {
     const testApp = await setupTodoTestApp();
 
     try {
       const auth = await register(testApp.app, "query-user", "query-user@example.com");
-      const response = await testApp.app.request("/api/todo/?due_date=invalid", {
+      const response = await testApp.app.request("/api/todo/?dueDate=invalid", {
         method: "GET",
         headers: toAuthHeader(auth.token),
       });
@@ -318,7 +318,7 @@ describe("todo read api", () => {
 
       expect(response.status).toBe(422);
       expect(body.type).toBe("validation_error");
-      expect(body.errors).toContainEqual({ field: "due_date", reason: "invalid_format" });
+      expect(body.errors).toContainEqual({ field: "dueDate", reason: "invalid_format" });
     } finally {
       await testApp.cleanup();
     }
