@@ -52,5 +52,5 @@ Source: ../000_backlog/update-task.md
 ## Open Questions
 ### Issue#55: PUTの更新方式
 - **決定**: 既存フロントエンドが`PUT`前提のため、互換性維持を優先し、`PUT /api/todos/{todo_id}/`は**部分更新（PATCH相当）**として扱う。未指定のフィールドは既存値を保持する。  
-  - 背景: `backend/app/routers/todo.py`の`@router.put("/{todo_id}/")`は現在全置換の説明だが、フロントエンド改修コストを抑えるため互換性を優先する。
+  - 背景: `backend/src/http/todo/routes.ts`の`@router.put("/{todo_id}/")`は現在全置換の説明だが、フロントエンド改修コストを抑えるため互換性を優先する。
 - **代替案（不採用）**: HTTP仕様の厳密性を優先する場合は`PATCH`を新設し、`PUT`は全置換を維持する。ただしこの場合はフロントエンドの更新が必要となる。

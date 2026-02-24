@@ -23,12 +23,12 @@
 ### B-1: モデル・スキーマを `progress_status` 単一化
 
 - 対象ファイル:
-  - `backend/app/models/todo.py`
-  - `backend/app/schemas/todo.py`
+  - `backend/src/domain/todo/types.ts`
+  - `backend/src/http/todo/schemas.ts`
 - 実装内容:
   - `progress_status` カラム/フィールド追加
   - `is_completed` / `isCompleted` を削除
-  - Pydantic入出力を `progressStatus` のみに統一
+  - zod入出力を `progressStatus` のみに統一
 - DoD:
   - APIレスポンスに `isCompleted` が存在しない
   - 不正な `progressStatus` は422になる
@@ -36,9 +36,9 @@
 ### B-2: Repository/Service/Routerを新状態モデルへ移行
 
 - 対象ファイル:
-  - `backend/app/repositories/todo.py`
-  - `backend/app/services/todo.py`
-  - `backend/app/routers/todo.py`
+  - `backend/src/infra/todo/prisma-todo-repo-port.ts`
+  - `backend/src/usecases/todo/write-todos.ts`
+  - `backend/src/http/todo/routes.ts`
 - 実装内容:
   - 状態フィルタを `progress_status` に統一
   - 繰り返しタスク生成条件を `progress_status == completed` に置換
@@ -50,7 +50,7 @@
 ### B-3: DBマイグレーションスクリプト実装（本番前必須）
 
 - 対象ファイル:
-  - `backend/scripts/migrate_task_progress_schema.py`（新規）
+  - `backend/prisma/schema.prisma`（新規）
 - 実装内容:
   - DBバックアップ作成
   - `todos` テーブル再作成で `is_completed` を物理削除
@@ -64,7 +64,7 @@
 ### B-4: Migration運用ドキュメント作成
 
 - 対象ファイル:
-  - `backend/docs/task-progress-migration.md`（新規）
+  - `backend/docs/ARCHITECTURE.md`（新規）
 - 実装内容:
   - 実行手順
   - 事前チェック項目
@@ -76,11 +76,11 @@
 ### B-5: Backendテスト更新
 
 - 対象ファイル:
-  - `backend/tests/test_todo.py`
-  - `backend/tests/test_todo_completion.py`
-  - `backend/tests/test_todo_recurrence.py`
-  - `backend/tests/test_todo_progress_status.py`（新規）
-  - `backend/tests/test_migrate_task_progress_schema.py`（新規）
+  - `backend/tests/todo.test.ts`
+  - `backend/tests/todo-update-api.test.ts`
+  - `backend/tests/usecases/todo-usecases.test.ts`
+  - `backend/tests/todo.test.ts`（新規）
+  - `backend/tests/prisma-testing.test.ts`（新規）
 - 実装内容:
   - `progressStatus` ベースのAPIテストへ更新
   - migration結果検証テストを追加
@@ -138,7 +138,7 @@
 ### R-1: ステージングでマイグレーションリハーサル
 
 - 実施内容:
-  - 本番同等データで `migrate_task_progress_schema.py` 実行
+  - 本番同等データで Prisma schema 変更を適用
   - APIスモークテスト
   - UIスモークテスト
 - DoD:
@@ -161,10 +161,10 @@
 
 ### T-1: Backend
 
-- `cd backend && uv run pytest`
-- `cd backend && uv run ruff format`
-- `cd backend && uv run ruff check`
-- `cd backend && uv run pyrefly check`
+- `cd backend && npm run test`
+- `cd backend && npm run format`
+- `cd backend && npm run lint`
+- `cd backend && npm run typecheck`
 
 ### T-2: Frontend
 
@@ -222,15 +222,15 @@
   - 状態フィルタを `progress_status` に統一
 - 自動テスト:
   - 新規:
-    - `backend/tests/test_todo_progress_status.py`（API契約と状態更新）
+    - `backend/tests/todo.test.ts`（API契約と状態更新）
   - 既存更新:
-    - `backend/tests/test_todo.py`
-    - `backend/tests/test_todo_completion.py`
-    - `backend/tests/test_todo_recurrence.py`
+    - `backend/tests/todo.test.ts`
+    - `backend/tests/todo-update-api.test.ts`
+    - `backend/tests/usecases/todo-usecases.test.ts`
   - 補足:
     - 認証系など非関連機能は既存テストで十分なため新規追加不要
 - 検証コマンド:
-  - `cd backend && uv run pytest tests/test_todo.py tests/test_todo_completion.py tests/test_todo_recurrence.py tests/test_todo_progress_status.py`
+  - `cd backend && npm run test -- tests/todo.test.ts tests/todo-update-api.test.ts tests/usecases/todo-usecases.test.ts`
 
 ### PR-2: Frontend型/一覧UIを `progressStatus` へ移行
 
@@ -277,18 +277,18 @@
   - B-4
   - B-5（migrationテスト）
 - 主な変更:
-  - `migrate_task_progress_schema.py` 実装
-  - `task-progress-migration.md` 作成
+  - Prisma schema更新と移行手順を整備
+  - `backend/docs/ARCHITECTURE.md` を更新
   - `is_completed -> progress_status` 変換と `is_completed` 物理削除
 - 自動テスト:
   - 新規:
-    - `backend/tests/test_migrate_task_progress_schema.py`
+    - `backend/tests/prisma-testing.test.ts`
   - 既存流用:
-    - `backend/tests/test_todo_progress_status.py`（移行後スキーマ前提の回帰）
+    - `backend/tests/todo.test.ts`（移行後スキーマ前提の回帰）
   - 補足:
     - 運用手順書自体への新規テストは不要（スクリプトテストで担保）
 - 検証コマンド:
-  - `cd backend && uv run pytest tests/test_migrate_task_progress_schema.py tests/test_todo_progress_status.py`
+  - `cd backend && npm run test -- tests/prisma-testing.test.ts tests/todo.test.ts`
 
 ### PR外作業（リリース手順）
 

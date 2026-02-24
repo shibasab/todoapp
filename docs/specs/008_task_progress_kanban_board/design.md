@@ -210,8 +210,8 @@ sequenceDiagram
 ### 6.4 マイグレーション方針（本番反映前に実施）
 
 - 実装対象:
-  - `backend/scripts/migrate_task_progress_schema.py`
-  - `backend/docs/task-progress-migration.md`
+  - `backend/prisma/schema.prisma`
+  - `backend/docs/ARCHITECTURE.md`
 - 実施内容:
   - DBバックアップ作成
   - `todos` を新スキーマ（`is_completed` なし）で再作成
@@ -227,18 +227,18 @@ sequenceDiagram
 
 ### 7.1 Backend（変更）
 
-- `backend/app/models/todo.py`
-- `backend/app/schemas/todo.py`
-- `backend/app/repositories/todo.py`
-- `backend/app/services/todo.py`
-- `backend/app/routers/todo.py`
+- `backend/src/domain/todo/types.ts`
+- `backend/src/http/todo/schemas.ts`
+- `backend/src/infra/todo/prisma-todo-repo-port.ts`
+- `backend/src/usecases/todo/write-todos.ts`
+- `backend/src/http/todo/routes.ts`
 
 ### 7.2 Backend（追加）
 
-- `backend/scripts/migrate_task_progress_schema.py`
-- `backend/docs/task-progress-migration.md`
-- `backend/tests/test_todo_progress_status.py`
-- `backend/tests/test_migrate_task_progress_schema.py`
+- `backend/prisma/schema.prisma`
+- `backend/docs/ARCHITECTURE.md`
+- `backend/tests/todo.test.ts`
+- `backend/tests/prisma-testing.test.ts`
 
 ### 7.3 Frontend（変更）
 
