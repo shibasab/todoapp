@@ -1,17 +1,19 @@
-import type { User } from "@prisma/client";
 import { err, ok } from "@todoapp/shared";
 import { describe, expect, it } from "vitest";
-import type { AuthRepository } from "../src/auth/repository";
-import { createAuthServiceFromRepository } from "../src/auth/service";
-import { createAccessToken } from "../src/auth/token";
-import type { AuthConfig } from "../src/auth/types";
+import type { AuthConfig, AuthUserRecord } from "../src/domain/auth/types";
+import { createAccessToken } from "../src/infra/auth/jwt-token-port";
+import type { AuthUserRepoPort } from "../src/ports/auth-user-repo-port";
+import type { PasswordPort } from "../src/ports/password-port";
+import type { TokenPort } from "../src/ports/token-port";
+import { createAuthenticateUseCase } from "../src/usecases/auth/authenticate";
+import { createRegisterUseCase } from "../src/usecases/auth/register-login";
 
 const authConfig: AuthConfig = {
   jwtSecret: "service-test-secret",
   jwtAccessTokenExpireMinutes: 30,
 };
 
-const createUser = (overrides: Partial<User> = {}): User => ({
+const createUser = (overrides: Partial<AuthUserRecord> = {}): AuthUserRecord => ({
   id: 1,
   username: "new-user",
   email: "new-user@example.com",
@@ -20,25 +22,42 @@ const createUser = (overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
-const createAuthRepositoryStub = (overrides: Partial<AuthRepository> = {}): AuthRepository => ({
-  findUserById: async () => null,
-  findUserByUsername: async () => null,
-  createUser: async () => ok(createUser()),
+const createAuthUserRepoStub = (
+  overrides: Partial<AuthUserRepoPort> = {},
+): AuthUserRepoPort => ({
+  findById: async () => null,
+  findByUsername: async () => null,
+  create: async () => ok(createUser()),
   ...overrides,
 });
 
+const passwordPortStub: PasswordPort = {
+  hash: async () => "hashed-password",
+  verify: async () => true,
+};
+
+const tokenPortStub: TokenPort = {
+  createAccessToken: async () => "signed-token",
+  verifyAccessToken: async () => ok("1"),
+};
+
 describe("auth service", () => {
-  it("register はRepositoryのDuplicateKeyをDuplicateUsernameへ変換する", async () => {
-    const repository = createAuthRepositoryStub({
-      createUser: async () =>
+  it("register はRepositoryのDuplicateUsernameをConflictへ変換する", async () => {
+    const authUserRepo = createAuthUserRepoStub({
+      create: async () =>
         err({
-          type: "DuplicateKey",
-          detail: "Unique constraint violation",
+          type: "DuplicateUsername",
+          detail: "Username already registered",
         }),
     });
-    const authService = createAuthServiceFromRepository(repository, authConfig);
+    const register = createRegisterUseCase({
+      authUserRepo,
+      passwordPort: passwordPortStub,
+      tokenPort: tokenPortStub,
+      authConfig,
+    });
 
-    const result = await authService.register({
+    const result = await register({
       username: "duplicate-user",
       email: "duplicate@example.com",
       password: "password",
@@ -46,23 +65,28 @@ describe("auth service", () => {
 
     expect(result).toEqual(
       err({
-        type: "DuplicateUsername",
+        type: "Conflict",
         detail: "Username already registered",
       }),
     );
   });
 
   it("register はRepositoryのUnexpectedをInternalErrorへ変換する", async () => {
-    const repository = createAuthRepositoryStub({
-      createUser: async () =>
+    const authUserRepo = createAuthUserRepoStub({
+      create: async () =>
         err({
           type: "Unexpected",
           detail: "Unexpected repository error",
         }),
     });
-    const authService = createAuthServiceFromRepository(repository, authConfig);
+    const register = createRegisterUseCase({
+      authUserRepo,
+      passwordPort: passwordPortStub,
+      tokenPort: tokenPortStub,
+      authConfig,
+    });
 
-    const result = await authService.register({
+    const result = await register({
       username: "unexpected-user",
       email: "unexpected@example.com",
       password: "password",
@@ -78,13 +102,17 @@ describe("auth service", () => {
 
   it("authenticate はBearerヘッダーからトークンを解釈できる", async () => {
     const user = createUser({ id: 10, isActive: true });
-    const repository = createAuthRepositoryStub({
-      findUserById: async () => user,
+    const authUserRepo = createAuthUserRepoStub({
+      findById: async () => user,
     });
-    const authService = createAuthServiceFromRepository(repository, authConfig);
+    const authenticate = createAuthenticateUseCase({
+      authUserRepo,
+      tokenPort: tokenPortStub,
+      authConfig,
+    });
     const token = await createAccessToken({ sub: String(user.id) }, authConfig);
 
-    const result = await authService.authenticate(`Bearer ${token}`);
+    const result = await authenticate(`Bearer ${token}`);
 
     expect(result).toEqual(
       ok({
@@ -96,10 +124,14 @@ describe("auth service", () => {
   });
 
   it("authenticate は不正Authorization形式をUnauthorizedに変換する", async () => {
-    const repository = createAuthRepositoryStub();
-    const authService = createAuthServiceFromRepository(repository, authConfig);
+    const authUserRepo = createAuthUserRepoStub();
+    const authenticate = createAuthenticateUseCase({
+      authUserRepo,
+      tokenPort: tokenPortStub,
+      authConfig,
+    });
 
-    const result = await authService.authenticate("Token invalid-format");
+    const result = await authenticate("Token invalid-format");
 
     expect(result).toEqual(
       err({
