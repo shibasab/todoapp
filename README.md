@@ -12,9 +12,12 @@ TypeScript（Bun/Hono/Prisma） + React（Vite）で構成された Todo アプ�
 
 - Node.js 24+
 - npm
-- Bun（推奨。未導入でも `npm run -w backend test` は実行可能）
+- Bun（backend の開発サーバー起動に必須）
 
 ```bash
+# Bun確認
+bun --version
+
 node --version
 npm --version
 ```
@@ -65,4 +68,22 @@ npm run format
 npm run lint
 npm run typecheck
 npm run test
+```
+
+shared:
+
+```bash
+cd shared
+npm run format:check
+npm run lint:check
+npm run typecheck
+npm run test
+```
+
+ワークスペース単位で実行する場合（リポジトリルート）:
+
+```bash
+npm run test:backend
+npm run test:frontend
+npm run test:shared
 ```

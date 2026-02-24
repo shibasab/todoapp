@@ -19,11 +19,13 @@
 todoapp/
 ├── backend/
 ├── frontend/
+├── shared/
 └── docs/
 ```
 
 - **backend**: バックエンドのコードが格納されているディレクトリ
 - **frontend**: フロントエンドのコードが格納されているディレクトリ
+- **shared**: backend / frontend で共通利用する型・Resultユーティリティ
 - **docs**: ドキュメントが格納されているディレクトリ
 
 ## 開発環境セットアップ
@@ -36,7 +38,7 @@ todoapp/
 
 - Node.js 24+
 - npm
-- Bun（任意。未導入時は `npm` 経由でテスト実行可能）
+- Bun（`backend` の開発サーバー起動に必須）
 
 ```bash
 # Node.js / npm確認
@@ -62,14 +64,7 @@ Node.js未インストールの場合は公式サイトを参照: https://nodejs
 ### backend
 
 ```bash
-cd backend
-npm install
-```
-
-### frontend
-
-```bash
-cd frontend
+# リポジトリルートで
 npm install
 ```
 
@@ -110,6 +105,19 @@ npm run typecheck
 
 ```bash
 cd frontend
+# テスト
+npm run test
+# フォーマット
+npm run format
+# 静的解析
+npm run lint
+npm run typecheck
+```
+
+### shared
+
+```bash
+cd shared
 # テスト
 npm run test
 # フォーマット
