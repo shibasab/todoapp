@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { Hono } from "hono";
-import { createAuthService } from "../../auth/service";
-import type { AuthConfig } from "../../auth/types";
+import type { AuthConfig } from "../../domain/auth/types";
+import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
+import { jwtTokenPort } from "../../infra/auth/jwt-token-port";
 import { createPrismaTodoRepoPort } from "../../infra/todo/prisma-todo-repo-port";
 import { systemClock } from "../../ports/clock-port";
+import { createAuthenticateUseCase } from "../../usecases/auth/authenticate";
 import { createGetTodoUseCase, createListTodosUseCase } from "../../usecases/todo/read-todos";
 import {
   createCreateTodoUseCase,
@@ -44,7 +46,12 @@ const readValidationField = (errorValue: {
 };
 export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): Hono => {
   const router = new Hono({ strict: false });
-  const authService = createAuthService(dependencies.prisma, dependencies.authConfig);
+  const authUserRepo = createPrismaAuthUserRepoPort(dependencies.prisma);
+  const authenticate = createAuthenticateUseCase({
+    authUserRepo,
+    tokenPort: jwtTokenPort,
+    authConfig: dependencies.authConfig,
+  });
   const todoRepo = createPrismaTodoRepoPort(dependencies.prisma);
   const listTodos = createListTodosUseCase({
     todoRepo,
@@ -72,7 +79,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   };
 
   router.get("/", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -110,7 +117,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.post("/", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -158,7 +165,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.get("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -180,7 +187,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.put("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -243,7 +250,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.delete("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }

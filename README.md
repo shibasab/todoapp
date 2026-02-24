@@ -19,8 +19,7 @@ backend/src/
 ├── ports/
 ├── infra/
 ├── http/
-├── shared/
-└── auth/  # 移行中の暫定構成
+└── shared/
 ```
 
 レイヤーの責務（要約）:

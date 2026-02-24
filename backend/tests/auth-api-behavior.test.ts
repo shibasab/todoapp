@@ -182,8 +182,8 @@ describe("auth api behavior", () => {
       const wrongPasswordBody = await readJson<ErrorBody>(wrongPasswordResponse);
       const missingUserBody = await readJson<ErrorBody>(missingUserResponse);
 
-      expect(wrongPasswordResponse.status).toBe(400);
-      expect(missingUserResponse.status).toBe(400);
+      expect(wrongPasswordResponse.status).toBe(401);
+      expect(missingUserResponse.status).toBe(401);
       expect(wrongPasswordBody).toEqual({
         detail: "Incorrect Credentials",
       });

@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { HealthResponse } from "@todoapp/shared";
 import type { PrismaClient } from "@prisma/client";
-import { createAuthRoutes } from "./auth/routes";
-import type { AuthConfig } from "./auth/types";
+import type { AuthConfig } from "./domain/auth/types";
+import { createAuthRoutes } from "./http/auth/routes";
 import { createTodoHttpRoutes } from "./http/todo/routes";
 import { createPrismaClient, resolveDatabaseUrl } from "./infra/prisma/client";
 

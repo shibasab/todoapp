@@ -39,8 +39,7 @@ backend/src/
 ├── ports/
 ├── infra/
 ├── http/
-├── shared/
-└── auth/  # 移行中の暫定構成
+└── shared/
 ```
 
 - **domain**: 型（ADT）と純粋関数によるドメインロジック
@@ -49,7 +48,6 @@ backend/src/
 - **infra**: portsの具体実装（Prisma/JWT/DB接続等）
 - **http**: Hono route、バリデーション、HTTPエラー変換
 - **shared**: backend内共通（網羅性チェック補助など）
-- **auth**: 機能単位構成が残る移行中領域（段階的にレイヤーへ統合）
 
 ### backend レイヤー依存ルール
 
@@ -59,7 +57,6 @@ backend/src/
 - `infra` は `ports` を実装し、外部ライブラリ依存を閉じ込める
 - `http` は入出力境界に集中し、業務ロジックを持たない
 - `app.ts` で依存を組み立てる（Composition Root）
-- `auth/*` への依存は移行完了まで暫定的に許容
 
 ## 開発環境セットアップ
 
