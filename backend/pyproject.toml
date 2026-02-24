@@ -1,0 +1,49 @@
+[project]
+name = "django-react-todo"
+version = "0.1.0"
+description = "Todo アプリケーションのバックエンド"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0,<5.0.0",
+    "email-validator>=2.3.0",
+    "sqlalchemy>=2.0.40",
+    "alembic>=1.14.0",
+    "aiosqlite>=0.21.0",
+    "python-dotenv>=1.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.11",
+    "pre-commit>=4.0.0",
+    "pyrefly>=0.47.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.uv.sources]
+
+# Ruff設定
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "B008",  # FastAPIのDependsパターンを許可
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports OK in __init__.py
