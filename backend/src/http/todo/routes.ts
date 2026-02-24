@@ -19,15 +19,12 @@ import {
   todoIdParamSchema,
   updateTodoBodySchema,
 } from "./schemas";
+import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
 import { toTodoHttpError } from "./to-http-error";
 
 export type TodoHttpRouteDependencies = Readonly<{
   prisma: PrismaClient;
   authConfig: AuthConfig;
-}>;
-
-type JsonResponder = Readonly<{
-  json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response;
 }>;
 
 const toDateOrNull = (dateValue: string | null | undefined): Date | null => {
@@ -38,12 +35,6 @@ const toDateOrNull = (dateValue: string | null | undefined): Date | null => {
   return new Date(`${dateValue}T00:00:00.000Z`);
 };
 
-const readValidationField = (errorValue: {
-  issues: readonly { path: readonly unknown[] }[];
-}): string => {
-  const field = errorValue.issues[0]?.path[0];
-  return typeof field === "string" ? field : "body";
-};
 export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): Hono => {
   const router = new Hono({ strict: false });
   const authUserRepo = createPrismaAuthUserRepoPort(dependencies.prisma);
@@ -86,13 +77,11 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
 
     const parsedQuery = listTodoQuerySchema.safeParse(context.req.query());
     if (!parsedQuery.success) {
-      const firstIssue = parsedQuery.error.issues[0];
-      const field = typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : "query";
       return respondError(
         context,
         toTodoValidationError([
           {
-            field,
+            field: readValidationField(parsedQuery.error, "query"),
             reason: "invalid_format",
           },
         ]),
@@ -122,8 +111,8 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return context.json({ detail: authenticated.error.detail }, 401);
     }
 
-    const rawBody = await context.req.json().catch(() => null);
-    if (rawBody == null) {
+    const rawBody = await readJsonBody(context);
+    if (!rawBody.ok) {
       return respondError(
         context,
         toTodoValidationError([
@@ -135,7 +124,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = createTodoBodySchema.safeParse(rawBody);
+    const parsedBody = createTodoBodySchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
@@ -197,8 +186,8 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return context.json({ detail: "Todo not found" }, 404);
     }
 
-    const rawBody = await context.req.json().catch(() => null);
-    if (rawBody == null) {
+    const rawBody = await readJsonBody(context);
+    if (!rawBody.ok) {
       return respondError(
         context,
         toTodoValidationError([
@@ -210,7 +199,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = updateTodoBodySchema.safeParse(rawBody);
+    const parsedBody = updateTodoBodySchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,

@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { err, ok, type Result } from "@todoapp/shared";
 import { Hono } from "hono";
 import { toAuthInvalidFormatError } from "../../domain/auth/errors";
 import type { AuthConfig } from "../../domain/auth/types";
@@ -10,6 +9,7 @@ import { createAuthenticateUseCase } from "../../usecases/auth/authenticate";
 import { toAuthValidationError, type AuthUseCaseError } from "../../usecases/auth/errors";
 import { createLoginUseCase, createRegisterUseCase } from "../../usecases/auth/register-login";
 import type { AuthUseCases } from "../../usecases/auth/types";
+import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
 import { loginBodySchema, registerBodySchema } from "./schemas";
 import { toAuthHttpError } from "./to-http-error";
 
@@ -18,31 +18,6 @@ export type AuthHttpRouteDependencies = Readonly<{
   authConfig: AuthConfig;
   authUseCasesOverride?: AuthUseCases;
 }>;
-
-type JsonResponder = Readonly<{
-  json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response;
-}>;
-
-const readValidationField = (errorValue: {
-  issues: readonly { path: readonly unknown[] }[];
-}): string => {
-  const field = errorValue.issues[0]?.path[0];
-  return typeof field === "string" ? field : "body";
-};
-
-const readJsonBody = async (
-  context: Readonly<{
-    req: Readonly<{
-      json: () => Promise<unknown>;
-    }>;
-  }>,
-): Promise<Result<unknown, "invalid_body">> => {
-  try {
-    return ok(await context.req.json());
-  } catch {
-    return err("invalid_body");
-  }
-};
 
 const respondError = (context: JsonResponder, errorValue: AuthUseCaseError): Response => {
   const httpError = toAuthHttpError(errorValue);
