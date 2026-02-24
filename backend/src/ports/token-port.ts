@@ -15,5 +15,8 @@ export type TokenPort = Readonly<{
     payload: Readonly<Record<string, unknown>>,
     authConfig: AuthConfig,
   ) => Promise<string>;
-  verifyAccessToken: (token: string, authConfig: AuthConfig) => TaskResult<string, TokenVerifyError>;
+  verifyAccessToken: (
+    token: string,
+    authConfig: AuthConfig,
+  ) => TaskResult<string, TokenVerifyError>;
 }>;
