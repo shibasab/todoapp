@@ -10,11 +10,7 @@ import {
   toAuthInvalidCredentialsError,
   type AuthUseCaseError,
 } from "./errors";
-import type {
-  AuthUseCaseCommonDependencies,
-  LoginUseCase,
-  RegisterUseCase,
-} from "./types";
+import type { AuthUseCaseCommonDependencies, LoginUseCase, RegisterUseCase } from "./types";
 
 type RegisterAndLoginDependencies = Readonly<{
   authUserRepo: AuthUserRepoPort;
@@ -38,9 +34,8 @@ export const createRegisterUseCase = (
   dependencies: RegisterAndLoginDependencies,
 ): RegisterUseCase => {
   return async (input) => {
-    const hashedPassword = await fromPromise(
-      dependencies.passwordPort.hash(input.password),
-      () => toAuthInternalError(),
+    const hashedPassword = await fromPromise(dependencies.passwordPort.hash(input.password), () =>
+      toAuthInternalError(),
     );
     if (!hashedPassword.ok) {
       return err(hashedPassword.error);
@@ -73,13 +68,10 @@ export const createRegisterUseCase = (
   };
 };
 
-export const createLoginUseCase = (
-  dependencies: RegisterAndLoginDependencies,
-): LoginUseCase => {
+export const createLoginUseCase = (dependencies: RegisterAndLoginDependencies): LoginUseCase => {
   return async (input) => {
-    const user = await fromPromise(
-      dependencies.authUserRepo.findByUsername(input.username),
-      () => toAuthInternalError(),
+    const user = await fromPromise(dependencies.authUserRepo.findByUsername(input.username), () =>
+      toAuthInternalError(),
     );
     if (!user.ok) {
       return err(user.error);
@@ -100,7 +92,10 @@ export const createLoginUseCase = (
     }
 
     const token = await fromPromise(
-      dependencies.tokenPort.createAccessToken({ sub: String(user.data.id) }, dependencies.authConfig),
+      dependencies.tokenPort.createAccessToken(
+        { sub: String(user.data.id) },
+        dependencies.authConfig,
+      ),
       () => toAuthInternalError(),
     );
     if (!token.ok) {
