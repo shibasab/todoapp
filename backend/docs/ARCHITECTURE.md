@@ -12,18 +12,21 @@ backend/src/
 ├── app.ts
 ├── server.ts
 ├── domain/
+│   ├── auth/
 │   └── todo/
 ├── usecases/
+│   ├── auth/
 │   └── todo/
 ├── ports/
 ├── infra/
+│   ├── auth/
 │   ├── prisma/
 │   └── todo/
 ├── http/
+│   ├── auth/
 │   └── todo/
 ├── shared/
 │   └── error.ts
-└── auth/              # 移行中（暫定）。段階的に上記レイヤーへ統合する。
 ```
 
 `Result` 系ユーティリティは workspace 共通パッケージ `shared/src/fp/result.ts` を `@todoapp/shared` として利用する。
@@ -71,8 +74,8 @@ backend/src/
 | `usecases` | `domain`, `ports`, `shared`, `@todoapp/shared` |
 | `ports` | `domain` の型、`@todoapp/shared` の型 |
 | `infra` | `ports`, `domain`, `shared`, `@todoapp/shared`, 外部ライブラリ |
-| `http` | `usecases`, `shared`, `auth`（移行完了までの暫定） |
-| `app.ts` | `http`, `infra`, `auth`（移行完了までの暫定） |
+| `http` | `usecases`, `shared`, `infra` |
+| `app.ts` | `http`, `infra` |
 
 ### 禁止事項
 
@@ -122,9 +125,3 @@ switch (recurrenceType) {
 
 - 原則 class は禁止。
 - 例外は `infra` 等で、ライブラリ制約や実装上の必然がある場合のみ許可する。
-
-## 移行中領域（`auth/*`）
-
-- 現在 `auth/*` には機能単位の構成が残っている。
-- 新規変更は原則としてレイヤー分離の方針に合わせる。
-- 既存 `auth/*` は段階的に `domain/usecases/ports/infra/http` へ再配置する。

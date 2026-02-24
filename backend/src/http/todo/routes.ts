@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { Hono } from "hono";
-import { createAuthService } from "../../auth/service";
-import type { AuthConfig } from "../../auth/types";
+import type { AuthConfig } from "../../domain/auth/types";
+import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
+import { jwtTokenPort } from "../../infra/auth/jwt-token-port";
 import { createPrismaTodoRepoPort } from "../../infra/todo/prisma-todo-repo-port";
 import { systemClock } from "../../ports/clock-port";
+import { createAuthenticateUseCase } from "../../usecases/auth/authenticate";
 import { createGetTodoUseCase, createListTodosUseCase } from "../../usecases/todo/read-todos";
 import {
   createCreateTodoUseCase,
@@ -17,15 +19,12 @@ import {
   todoIdParamSchema,
   updateTodoBodySchema,
 } from "./schemas";
+import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
 import { toTodoHttpError } from "./to-http-error";
 
 export type TodoHttpRouteDependencies = Readonly<{
   prisma: PrismaClient;
   authConfig: AuthConfig;
-}>;
-
-type JsonResponder = Readonly<{
-  json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response;
 }>;
 
 const toDateOrNull = (dateValue: string | null | undefined): Date | null => {
@@ -36,15 +35,14 @@ const toDateOrNull = (dateValue: string | null | undefined): Date | null => {
   return new Date(`${dateValue}T00:00:00.000Z`);
 };
 
-const readValidationField = (errorValue: {
-  issues: readonly { path: readonly unknown[] }[];
-}): string => {
-  const field = errorValue.issues[0]?.path[0];
-  return typeof field === "string" ? field : "body";
-};
 export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): Hono => {
   const router = new Hono({ strict: false });
-  const authService = createAuthService(dependencies.prisma, dependencies.authConfig);
+  const authUserRepo = createPrismaAuthUserRepoPort(dependencies.prisma);
+  const authenticate = createAuthenticateUseCase({
+    authUserRepo,
+    tokenPort: jwtTokenPort,
+    authConfig: dependencies.authConfig,
+  });
   const todoRepo = createPrismaTodoRepoPort(dependencies.prisma);
   const listTodos = createListTodosUseCase({
     todoRepo,
@@ -72,20 +70,18 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   };
 
   router.get("/", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
 
     const parsedQuery = listTodoQuerySchema.safeParse(context.req.query());
     if (!parsedQuery.success) {
-      const firstIssue = parsedQuery.error.issues[0];
-      const field = typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : "query";
       return respondError(
         context,
         toTodoValidationError([
           {
-            field,
+            field: readValidationField(parsedQuery.error, "query"),
             reason: "invalid_format",
           },
         ]),
@@ -110,13 +106,13 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.post("/", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
 
-    const rawBody = await context.req.json().catch(() => null);
-    if (rawBody == null) {
+    const rawBody = await readJsonBody(context);
+    if (!rawBody.ok) {
       return respondError(
         context,
         toTodoValidationError([
@@ -128,7 +124,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = createTodoBodySchema.safeParse(rawBody);
+    const parsedBody = createTodoBodySchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
@@ -158,7 +154,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.get("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -180,7 +176,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.put("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }
@@ -190,8 +186,8 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return context.json({ detail: "Todo not found" }, 404);
     }
 
-    const rawBody = await context.req.json().catch(() => null);
-    if (rawBody == null) {
+    const rawBody = await readJsonBody(context);
+    if (!rawBody.ok) {
       return respondError(
         context,
         toTodoValidationError([
@@ -203,7 +199,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = updateTodoBodySchema.safeParse(rawBody);
+    const parsedBody = updateTodoBodySchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
@@ -243,7 +239,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   });
 
   router.delete("/:todoId", async (context) => {
-    const authenticated = await authService.authenticate(context.req.header("Authorization"));
+    const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
       return context.json({ detail: authenticated.error.detail }, 401);
     }

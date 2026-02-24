@@ -6,7 +6,7 @@ import {
   createTemporarySqliteDatabase,
   ensureSqliteSchema,
 } from "../src/infra/prisma/testing";
-import { createAccessToken } from "../src/auth/token";
+import { createAccessToken } from "../src/infra/auth/jwt-token-port";
 
 type AuthSuccessBody = Readonly<{
   user: Readonly<{
@@ -25,6 +25,16 @@ type UserBody = Readonly<{
 
 type ErrorBody = Readonly<{
   detail: string;
+}>;
+
+type ValidationErrorBody = Readonly<{
+  status: 422;
+  type: "validation_error";
+  detail: string;
+  errors: readonly Readonly<{
+    field: string;
+    reason: string;
+  }>[];
 }>;
 
 const readJson = async <T>(response: Response): Promise<T> => (await response.json()) as T;
@@ -101,7 +111,7 @@ describe("auth routes", () => {
     }
   });
 
-  it("POST /api/auth/register は重複ユーザー名で400を返す", async () => {
+  it("POST /api/auth/register は重複ユーザー名で409を返す", async () => {
     const testApp = await setupAuthTestApp();
 
     try {
@@ -122,7 +132,7 @@ describe("auth routes", () => {
       );
       const body = await readJson<ErrorBody>(response);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(409);
       expect(body.detail).toContain("already registered");
     } finally {
       await testApp.cleanup();
@@ -140,10 +150,12 @@ describe("auth routes", () => {
           email: 123,
         }),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("username");
     } finally {
       await testApp.cleanup();
     }
@@ -156,10 +168,12 @@ describe("auth routes", () => {
       const response = await testApp.app.request(
         createJsonRequest("/api/auth/register", "invalid-body"),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("body");
     } finally {
       await testApp.cleanup();
     }
@@ -172,10 +186,12 @@ describe("auth routes", () => {
       const response = await testApp.app.request(
         createMalformedJsonRequest("/api/auth/register", "{"),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("body");
     } finally {
       await testApp.cleanup();
     }
@@ -203,7 +219,7 @@ describe("auth routes", () => {
       ]);
       const statuses = responses.map((response) => response.status).sort();
 
-      expect(statuses).toEqual([200, 400]);
+      expect(statuses).toEqual([200, 409]);
     } finally {
       await testApp.cleanup();
     }
@@ -237,7 +253,7 @@ describe("auth routes", () => {
     }
   });
 
-  it("POST /api/auth/login は不正パスワードで400を返す", async () => {
+  it("POST /api/auth/login は不正パスワードで401を返す", async () => {
     const testApp = await setupAuthTestApp();
 
     try {
@@ -257,14 +273,14 @@ describe("auth routes", () => {
       );
       const body = await readJson<ErrorBody>(response);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
       expect(body.detail).toBe("Incorrect Credentials");
     } finally {
       await testApp.cleanup();
     }
   });
 
-  it("POST /api/auth/login は存在しないユーザーで400を返す", async () => {
+  it("POST /api/auth/login は存在しないユーザーで401を返す", async () => {
     const testApp = await setupAuthTestApp();
 
     try {
@@ -276,7 +292,7 @@ describe("auth routes", () => {
       );
       const body = await readJson<ErrorBody>(response);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
       expect(body.detail).toBe("Incorrect Credentials");
     } finally {
       await testApp.cleanup();
@@ -293,10 +309,12 @@ describe("auth routes", () => {
           password: "",
         }),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("username");
     } finally {
       await testApp.cleanup();
     }
@@ -309,10 +327,12 @@ describe("auth routes", () => {
       const response = await testApp.app.request(
         createJsonRequest("/api/auth/login", "invalid-body"),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("body");
     } finally {
       await testApp.cleanup();
     }
@@ -325,10 +345,12 @@ describe("auth routes", () => {
       const response = await testApp.app.request(
         createMalformedJsonRequest("/api/auth/login", "{"),
       );
-      const body = await readJson<ErrorBody>(response);
+      const body = await readJson<ValidationErrorBody>(response);
 
       expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
       expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("body");
     } finally {
       await testApp.cleanup();
     }
