@@ -30,9 +30,9 @@
 #### B-1: `parent_id` スキーマ追加
 
 - 対象ファイル（予定）
-  - `backend/app/models/todo.py`
-  - `backend/scripts/*migration*.py`
-  - `backend/tests/*migration*.py`
+  - `backend/src/domain/todo/types.ts`
+  - `backend/prisma/schema.prisma`
+  - `backend/tests/prisma-testing.test.ts`
 - 変更
   - `parent_id` + FK + index追加
   - 中間互換スキーマを置かず、最終スキーマへ一括移行
@@ -45,10 +45,10 @@
 #### B-2: サブタスク作成API
 
 - 対象ファイル（予定）
-  - `backend/app/schemas/todo.py`
-  - `backend/app/routers/todo.py`
-  - `backend/app/services/todo_service.py`
-  - `backend/tests/test_todo_subtask_create.py`（新規）
+  - `backend/src/http/todo/schemas.ts`
+  - `backend/src/http/todo/routes.ts`
+  - `backend/src/usecases/todo/write-todos.ts`
+  - `backend/tests/todo-write-basic-api.test.ts`（新規）
 - 変更
   - `parentId`入力、親存在/多階層禁止/タイトル検証
 - 先行テスト（Red）
@@ -59,9 +59,9 @@
 #### B-3: 親完了制御 + 進捗計算
 
 - 対象ファイル（予定）
-  - `backend/app/services/todo_service.py`
-  - `backend/app/repositories/todo_repository.py`
-  - `backend/tests/test_todo_subtask_progress.py`（新規）
+  - `backend/src/usecases/todo/write-todos.ts`
+  - `backend/src/infra/todo/prisma-todo-repo-port.ts`
+  - `backend/tests/todo-read-api.test.ts`（新規）
 - 変更
   - 親完了時の409制御
   - `0/0 (0%)` 含む進捗計算
@@ -75,7 +75,7 @@
 #### B-4: 親削除カスケード
 
 - 対象ファイル（予定）
-  - `backend/tests/test_todo_subtask_delete.py`（新規 or 既存更新）
+  - `backend/tests/todo-write-basic-api.test.ts`（新規 or 既存更新）
 - 変更
   - 親削除時の子削除保証
 - 先行テスト（Red）
@@ -87,8 +87,8 @@
 #### B-5: 繰り返しタスクとの整合ルール実装
 
 - 対象ファイル（予定）
-  - `backend/app/services/todo_service.py`
-  - `backend/tests/test_todo_subtask_recurrence_rules.py`（新規）
+  - `backend/src/usecases/todo/write-todos.ts`
+  - `backend/tests/todo-update-api.test.ts`（新規）
 - 変更
   - サブタスクへの `recurrence_type != none` を409で拒否
   - 繰り返し親完了時の次回生成でサブタスク非複製を保証
@@ -143,10 +143,10 @@
 ### Phase Q (Quality Gate)
 
 - Backend
-  - `cd backend && uv run pytest`
-  - `cd backend && uv run ruff format`
-  - `cd backend && uv run ruff check`
-  - `cd backend && uv run pyrefly check`
+  - `cd backend && npm run test`
+  - `cd backend && npm run format`
+  - `cd backend && npm run lint`
+  - `cd backend && npm run typecheck`
 - Frontend
   - `cd frontend && npm run test`
   - `cd frontend && npm run format`
@@ -186,20 +186,20 @@
 - 変更
   - B-1, B-2
 - 自動テスト
-  - 新規: `test_todo_subtask_create.py`
+  - 新規: `todo-write-basic-api.test.ts`
   - 新規/更新: 一括migration検証テスト（中間互換なし）
 - 検証コマンド
-  - `cd backend && uv run pytest tests/test_todo_subtask_create.py tests/*migration*.py`
+  - `cd backend && npm run test -- tests/todo-write-basic-api.test.ts tests/prisma-testing.test.ts`
 
 ### PR-2: Backend親完了制御 + 進捗計算 + 親削除 + 繰り返し整合
 
 - 変更
   - B-3, B-4, B-5
 - 自動テスト
-  - 新規: `test_todo_subtask_progress.py`
-  - 新規/更新: `test_todo_subtask_delete.py`
+  - 新規: `todo-read-api.test.ts`
+  - 新規/更新: `todo-write-basic-api.test.ts`
 - 検証コマンド
-  - `cd backend && uv run pytest tests/test_todo_subtask_progress.py tests/test_todo_subtask_delete.py tests/test_todo_subtask_recurrence_rules.py`
+  - `cd backend && npm run test -- tests/todo-read-api.test.ts tests/todo-write-basic-api.test.ts tests/todo-update-api.test.ts`
 
 ### PR-3: Frontend型/サブタスクUI/拒否表示
 

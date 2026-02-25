@@ -19,12 +19,44 @@
 todoapp/
 ├── backend/
 ├── frontend/
+├── shared/
 └── docs/
 ```
 
 - **backend**: バックエンドのコードが格納されているディレクトリ
 - **frontend**: フロントエンドのコードが格納されているディレクトリ
+- **shared**: backend / frontend で共通利用する型・Resultユーティリティ
 - **docs**: ドキュメントが格納されているディレクトリ
+
+### backend/src レイヤー構成（現行）
+
+```shell
+backend/src/
+├── app.ts
+├── server.ts
+├── domain/
+├── usecases/
+├── ports/
+├── infra/
+├── http/
+└── shared/
+```
+
+- **domain**: 型（ADT）と純粋関数によるドメインロジック
+- **usecases**: ユースケース合成、Resultチェーン、ユースケースエラー
+- **ports**: 外部依存の抽象インターフェース（Repo/Clock等）
+- **infra**: portsの具体実装（Prisma/JWT/DB接続等）
+- **http**: Hono route、バリデーション、HTTPエラー変換
+- **shared**: backend内共通（網羅性チェック補助など）
+
+### backend レイヤー依存ルール
+
+- `domain` は他レイヤーに依存しない（外部FW・DB依存禁止）
+- `usecases` は `domain` / `ports` / `shared` / `@todoapp/shared` に依存可能
+- `ports` は契約定義に限定し、実装詳細（Prisma等）に依存しない
+- `infra` は `ports` を実装し、外部ライブラリ依存を閉じ込める
+- `http` は入出力境界に集中し、業務ロジックを持たない
+- `app.ts` で依存を組み立てる（Composition Root）
 
 ## 開発環境セットアップ
 
@@ -34,18 +66,14 @@ todoapp/
 
 バックエンドのセットアップ前に、以下をインストールすること。
 
-- Python 3.13+
-- uv
+- Node.js 24+
+- npm
+- Bun（`backend` の開発サーバー起動に必須）
 
 ```bash
-# Python確認
-python3 --version
-
-# uvインストール（macOS / Linux）
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# uv確認
-uv --version
+# Node.js / npm確認
+node --version
+npm --version
 ```
 
 ### frontend
@@ -66,14 +94,7 @@ Node.js未インストールの場合は公式サイトを参照: https://nodejs
 ### backend
 
 ```bash
-cd backend
-uv sync
-```
-
-### frontend
-
-```bash
-cd frontend
+# リポジトリルートで
 npm install
 ```
 
@@ -83,7 +104,7 @@ npm install
 
 ```bash
 cd backend
-uv run uvicorn app.main:app --reload --port 8000
+npm run dev
 ```
 
 ### frontend
@@ -102,18 +123,31 @@ npm run dev
 ```bash
 cd backend
 # テスト
-uv run pytest
+npm run test
 # フォーマット
-uv run ruff format
+npm run format
 # 静的解析
-uv run ruff check
-uv run pyrefly check
+npm run lint
+npm run typecheck
 ```
 
 ### frontend
 
 ```bash
 cd frontend
+# テスト
+npm run test
+# フォーマット
+npm run format
+# 静的解析
+npm run lint
+npm run typecheck
+```
+
+### shared
+
+```bash
+cd shared
 # テスト
 npm run test
 # フォーマット
@@ -136,6 +170,16 @@ npm run typecheck
   - 既存のテストでカバーできている場合はテスト追加不要
   - 変更とそのテストは一つのPRにまとめる
 - コミットメッセージは簡潔で明確に
+
+### バックエンド実装方針（TypeScript移行後）
+
+- 関数プログラミング中心で実装し、宣言的な記述を優先する
+- データはイミュータブルを基本とし、`Readonly` / `readonly` を積極利用する
+- class は原則禁止。必要最小限で `infra` などに限定して使用する
+- エラーハンドリングは `Result` を標準とし、ROP（Railway Oriented Programming）で処理を合成する
+- `try/catch` は境界層（主に `infra`・HTTP入力境界）へ集約し、`usecases` での常用は避ける
+- データの状態表現は ADT（直積・直和）で設計する
+- 直和型の分岐は `switch` と `assertNever` による網羅性チェックを行う
 
 ### Commit & Pull Request Guidelines
 
