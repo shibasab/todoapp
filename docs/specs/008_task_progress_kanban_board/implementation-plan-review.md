@@ -35,7 +35,7 @@
 - 判断理由:
   - アプリ挙動テストと移行検証は失敗原因が異なる
 - 修正方針:
-  - `test_migrate_task_progress_schema.py` を独立追加
+  - Prisma移行検証テスト（`prisma-testing.test.ts`）を独立追加
 - 反映状況:
   - 反映済み（`implementation-tasks.md` B-5）
 
@@ -77,4 +77,3 @@
 - 重大な未解決事項なし
 - migration実装と本番前リハーサルが計画に組み込まれている
 - 実装着手可能
-

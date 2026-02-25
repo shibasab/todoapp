@@ -6,7 +6,7 @@
 - 作成日: 2026-02-19
 - 更新日: 2026-02-21
 - スコープ: both（backend + frontend）
-- 設計原則: 親子整合性をDB制約で担保し、業務制約（親完了条件）をService層で一元化する
+- 設計原則: 親子整合性をDB制約で担保し、業務制約（親完了条件）をusecases層で一元化する
 
 ## 1. Baseline（Spec固定）
 
@@ -41,7 +41,7 @@
 
 ## 2. 実装コンテキスト
 
-- BackendはFastAPI + SQLAlchemy + SQLiteでレイヤード構成（router -> service -> repository）。
+- BackendはTypeScript + Hono + Prisma + SQLiteでレイヤード構成（http -> usecases -> ports/infra）。
 - FrontendはReact + TypeScriptで、`models`（ドメイン）と`services`（外部連携）を分離する構成。
 - 現状Todoは単体完了制御のみで、親子関連を持たない。
 
