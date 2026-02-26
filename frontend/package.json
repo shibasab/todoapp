@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "@todoapp/shared": "file:../shared",
     "axios": "^1.13.5",
     "prop-types": "^15.7.2",
     "react": "^18.2.0",
