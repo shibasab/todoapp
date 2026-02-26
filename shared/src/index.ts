@@ -1,4 +1,43 @@
 export { HealthResponseSchema, type HealthResponse } from "./contracts/health";
+export { AuthSchema, UserSchema, type Auth, type User } from "./contracts/auth";
+export {
+  InvalidFormatErrorSchema,
+  MaxLengthErrorSchema,
+  MinLengthErrorSchema,
+  RequiredErrorSchema,
+  UniqueViolationErrorSchema,
+  ValidationErrorResponseSchema,
+  ValidationErrorSchema,
+  type InvalidFormatError,
+  type MaxLengthError,
+  type MinLengthError,
+  type RequiredError,
+  type UniqueViolationError,
+  type ValidationError,
+  type ValidationErrorResponse,
+} from "./contracts/error";
+export {
+  CreateTodoRequestSchema,
+  TodoDueDateFilterSchema,
+  TodoProgressStatusSchema,
+  TodoRecurrenceTypeSchema,
+  TodoSchema,
+  TodoSearchParamDueDateSchema,
+  TodoSearchParamStatusSchema,
+  TodoSearchQuerySchema,
+  TodoStatusFilterSchema,
+  UpdateTodoRequestSchema,
+  type CreateTodoRequest,
+  type Todo,
+  type TodoDueDateFilter,
+  type TodoProgressStatus,
+  type TodoRecurrenceType,
+  type TodoSearchParamDueDate,
+  type TodoSearchParamStatus,
+  type TodoSearchQuery,
+  type TodoStatusFilter,
+  type UpdateTodoRequest,
+} from "./contracts/todo";
 export {
   all,
   err,
