@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { LoginRequestSchema, RegisterRequestSchema } from "@todoapp/shared";
 import { Hono } from "hono";
 import { toAuthInvalidFormatError } from "../../domain/auth/errors";
 import type { AuthConfig } from "../../domain/auth/types";
@@ -10,7 +11,6 @@ import { toAuthValidationError, type AuthUseCaseError } from "../../usecases/aut
 import { createLoginUseCase, createRegisterUseCase } from "../../usecases/auth/register-login";
 import type { AuthUseCases } from "../../usecases/auth/types";
 import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
-import { loginBodySchema, registerBodySchema } from "./schemas";
 import { toAuthHttpError } from "./to-http-error";
 
 export type AuthHttpRouteDependencies = Readonly<{
@@ -59,7 +59,7 @@ export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono 
       return respondError(context, toAuthValidationError([toAuthInvalidFormatError("body")]));
     }
 
-    const parsedBody = registerBodySchema.safeParse(rawBody.data);
+    const parsedBody = RegisterRequestSchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
@@ -81,7 +81,7 @@ export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono 
       return respondError(context, toAuthValidationError([toAuthInvalidFormatError("body")]));
     }
 
-    const parsedBody = loginBodySchema.safeParse(rawBody.data);
+    const parsedBody = LoginRequestSchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,

@@ -1,4 +1,30 @@
+export {
+  AuthResponseSchema,
+  LoginRequestSchema,
+  RegisterRequestSchema,
+  UserSchema,
+  type AuthResponse,
+  type LoginRequest,
+  type RegisterRequest,
+  type User,
+} from "./contracts/auth";
 export { HealthResponseSchema, type HealthResponse } from "./contracts/health";
+export {
+  CreateTodoRequestSchema,
+  ListTodoQuerySchema,
+  TodoSchema,
+  UpdateTodoRequestSchema,
+  todoDueDateFilters,
+  todoProgressStatuses,
+  todoRecurrenceTypes,
+  type CreateTodoRequest,
+  type ListTodoQuery,
+  type Todo,
+  type TodoDueDateFilter,
+  type TodoProgressStatus,
+  type TodoRecurrenceType,
+  type UpdateTodoRequest,
+} from "./contracts/todo";
 export {
   all,
   err,

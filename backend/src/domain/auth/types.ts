@@ -1,3 +1,5 @@
+import type { User } from "@todoapp/shared";
+
 export type AuthConfig = Readonly<{
   jwtSecret: string;
   jwtAccessTokenExpireMinutes: number;
@@ -18,11 +20,7 @@ export type AuthUserRecord = Readonly<{
   isActive: boolean;
 }>;
 
-export type PublicUser = Readonly<{
-  id: number;
-  username: string;
-  email: string;
-}>;
+export type PublicUser = User;
 
 export type AuthTokenResponse = Readonly<{
   user: PublicUser;

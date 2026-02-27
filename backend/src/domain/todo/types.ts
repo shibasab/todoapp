@@ -1,11 +1,11 @@
-export const todoProgressStatuses = ["not_started", "in_progress", "completed"] as const;
-export type TodoProgressStatus = (typeof todoProgressStatuses)[number];
+import type {
+  Todo as TodoListItem,
+  TodoDueDateFilter,
+  TodoProgressStatus,
+  TodoRecurrenceType,
+} from "@todoapp/shared";
 
-export const todoRecurrenceTypes = ["none", "daily", "weekly", "monthly"] as const;
-export type TodoRecurrenceType = (typeof todoRecurrenceTypes)[number];
-
-export const todoDueDateFilters = ["all", "today", "this_week", "overdue", "none"] as const;
-export type TodoDueDateFilter = (typeof todoDueDateFilters)[number];
+export { todoDueDateFilters, todoProgressStatuses, todoRecurrenceTypes } from "@todoapp/shared";
 
 export type TodoValidationErrorReason =
   | "required"
@@ -32,16 +32,4 @@ export type TodoItem = Readonly<{
   previousTodoId: number | null;
 }>;
 
-export type TodoListItem = Readonly<{
-  id: number;
-  name: string;
-  detail: string;
-  dueDate: string | null;
-  createdAt: string;
-  progressStatus: TodoProgressStatus;
-  recurrenceType: TodoRecurrenceType;
-  parentId: number | null;
-  completedSubtaskCount: number;
-  totalSubtaskCount: number;
-  subtaskProgressPercent: number;
-}>;
+export type { TodoDueDateFilter, TodoListItem, TodoProgressStatus, TodoRecurrenceType };
