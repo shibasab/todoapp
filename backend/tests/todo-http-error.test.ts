@@ -26,14 +26,39 @@ describe("todo http error mapper", () => {
       detail: "Internal server error",
     });
 
-    expect(validation.status).toBe(422);
-    expect(validation.body).toMatchObject({
-      type: "validation_error",
+    expect(validation).toEqual({
+      status: 422,
+      body: {
+        status: 422,
+        type: "validation_error",
+        detail: "Validation error",
+        errors: [{ field: "name", reason: "required" }],
+      },
     });
-    expect(unauthorized.status).toBe(401);
-    expect(notFound.status).toBe(404);
-    expect(conflict.status).toBe(409);
-    expect(internal.status).toBe(500);
+    expect(unauthorized).toEqual({
+      status: 401,
+      body: {
+        detail: "Could not validate credentials",
+      },
+    });
+    expect(notFound).toEqual({
+      status: 404,
+      body: {
+        detail: "Todo not found",
+      },
+    });
+    expect(conflict).toEqual({
+      status: 409,
+      body: {
+        detail: "Conflict error",
+      },
+    });
+    expect(internal).toEqual({
+      status: 500,
+      body: {
+        detail: "Internal server error",
+      },
+    });
   });
 
   it("未定義のユニオン値はNotExhaustiveErrorを投げる", () => {

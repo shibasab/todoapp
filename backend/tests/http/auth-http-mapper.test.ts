@@ -30,22 +30,44 @@ describe("auth http error mapper", () => {
       detail: "Internal server error",
     });
 
-    expect(validation.status).toBe(422);
-    expect(validation.body).toEqual({
+    expect(validation).toEqual({
       status: 422,
-      type: "validation_error",
-      detail: "Validation error",
-      errors: [
-        {
-          field: "username",
-          reason: "invalid_format",
-        },
-      ],
+      body: {
+        status: 422,
+        type: "validation_error",
+        detail: "Validation error",
+        errors: [
+          {
+            field: "username",
+            reason: "invalid_format",
+          },
+        ],
+      },
     });
-    expect(unauthorized.status).toBe(401);
-    expect(conflict.status).toBe(409);
-    expect(notFound.status).toBe(404);
-    expect(internal.status).toBe(500);
+    expect(unauthorized).toEqual({
+      status: 401,
+      body: {
+        detail: "Could not validate credentials",
+      },
+    });
+    expect(conflict).toEqual({
+      status: 409,
+      body: {
+        detail: "Username already registered",
+      },
+    });
+    expect(notFound).toEqual({
+      status: 404,
+      body: {
+        detail: "Not found",
+      },
+    });
+    expect(internal).toEqual({
+      status: 500,
+      body: {
+        detail: "Internal server error",
+      },
+    });
   });
 
   it("未定義のユニオン値はNotExhaustiveErrorを投げる", () => {
