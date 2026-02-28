@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import", "promise"],
+  "categories": {
+    "correctness": "deny",
+    "suspicious": "warn",
+    "perf": "warn",
+    "restriction": "allow",
+    "nursery": "allow",
+    "style": "allow",
+    "pedantic": "allow"
+  },
+  "rules": {
+    "typescript/no-extraneous-class": "deny",
+    "no-throw-literal": "deny",
+    "typescript/only-throw-error": "deny",
+    "typescript/no-floating-promises": "deny",
+    "typescript/switch-exhaustiveness-check": "deny"
+  },
+  "env": {
+    "es2024": true
+  },
+  "ignorePatterns": ["node_modules", "dist", "*.config.ts", "*.config.js"]
+}
