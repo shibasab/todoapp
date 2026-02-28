@@ -1,5 +1,5 @@
-import type { AuthResponse, TaskResult, User } from "@todoapp/shared";
-import type { AuthConfig } from "../../domain/auth/types";
+import type { TaskResult } from "@todoapp/shared";
+import type { AuthTokenResponse, AuthConfig, PublicUser } from "../../domain/auth/types";
 import type { AuthUseCaseError } from "./errors";
 
 export type RegisterInput = Readonly<{
@@ -13,13 +13,15 @@ export type LoginInput = Readonly<{
   password: string;
 }>;
 
-export type RegisterUseCase = (input: RegisterInput) => TaskResult<AuthResponse, AuthUseCaseError>;
+export type RegisterUseCase = (
+  input: RegisterInput,
+) => TaskResult<AuthTokenResponse, AuthUseCaseError>;
 
-export type LoginUseCase = (input: LoginInput) => TaskResult<AuthResponse, AuthUseCaseError>;
+export type LoginUseCase = (input: LoginInput) => TaskResult<AuthTokenResponse, AuthUseCaseError>;
 
 export type AuthenticateUseCase = (
   authorizationHeaderOrToken: string | undefined,
-) => TaskResult<User, AuthUseCaseError>;
+) => TaskResult<PublicUser, AuthUseCaseError>;
 
 export type AuthUseCases = Readonly<{
   register: RegisterUseCase;
