@@ -1,6 +1,7 @@
+import { todoPath } from '@todoapp/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { ValidationError, ValidationErrorResponse } from '../models/error'
+import type { ValidationError } from '../models/error'
 import type { CreateTodoRequest, Todo, TodoRecurrenceType } from '../models/todo'
 import type { TodoSearchParams, TodoSearchState } from './todoSearch'
 
@@ -143,9 +144,10 @@ export const useTodo = (): TodoService => {
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
       const result = await apiClient.post('/todo/', {
         ...data,
+        parentId: data.parentId ?? null,
       })
       if (!result.ok) {
-        return result.error.errors
+        return result.error.errors as readonly ValidationError[]
       }
       await fetchTodos(lastSearchRef.current)
     },
@@ -162,11 +164,11 @@ export const useTodo = (): TodoService => {
 
       const { id, ...body } = todo
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
-      const result = await apiClient.put<Todo, ValidationErrorResponse>(`/todo/${id}/`, {
+      const result = await apiClient.put(todoPath(id), {
         ...body,
       })
       if (!result.ok) {
-        return result.error.errors
+        return result.error.errors as readonly ValidationError[]
       }
       await fetchTodos(lastSearchRef.current)
     },
@@ -190,7 +192,7 @@ export const useTodo = (): TodoService => {
 
   const removeTodo = useCallback(
     async (id: number) => {
-      await apiClient.delete(`/todo/${id}/`)
+      await apiClient.delete(todoPath(id))
       await fetchTodos(lastSearchRef.current)
     },
     [apiClient, fetchTodos],

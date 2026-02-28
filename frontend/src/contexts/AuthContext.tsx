@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      await apiClient.post('/auth/logout', null)
+      await apiClient.post('/auth/logout')
     } finally {
       authToken.remove()
       setAuthState({ status: 'unauthenticated' })

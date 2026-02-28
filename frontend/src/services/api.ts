@@ -1,15 +1,15 @@
-import axios, { isAxiosError, type AxiosInstance } from 'axios'
-
 import type {
   ApiError,
   ApiQuery,
   ApiRequest,
   ApiResponse,
-  DeleteEndpoints,
-  GetEndpoints,
-  PostEndpoints,
-  PutEndpoints,
-} from './apiEndpoints'
+  DeleteEndpoint,
+  GetEndpoint,
+  PostEndpoint,
+  PutEndpoint,
+} from '@todoapp/shared'
+
+import axios, { isAxiosError, type AxiosInstance } from 'axios'
 
 import config from '../config'
 import { type Result, err, ok } from '../models/result'
@@ -28,7 +28,7 @@ type ApiGetConfig<Params> = Readonly<{
 type ApiGetQuery = Readonly<Record<string, unknown>>
 type ApiGetConfigAny = ApiGetConfig<ApiGetQuery>
 
-type ApiGetParamsInput<E extends GetEndpoints> =
+type ApiGetParamsInput<E extends GetEndpoint> =
   ApiQuery<'get', E> extends ApiGetQuery
     ? ApiQuery<'get', E> | ApiGetConfig<ApiQuery<'get', E>> | undefined
     :
@@ -37,25 +37,28 @@ type ApiGetParamsInput<E extends GetEndpoints> =
           }>
         | undefined
 
+type ApiPostRequestArgs<E extends PostEndpoint> =
+  ApiRequest<'post', E> extends undefined ? readonly [data?: undefined] : readonly [data: ApiRequest<'post', E>]
+
+type ApiPutRequestArgs<E extends PutEndpoint> =
+  ApiRequest<'put', E> extends undefined ? readonly [data?: undefined] : readonly [data: ApiRequest<'put', E>]
+
 export type ApiClient = Readonly<{
-  get: <E extends GetEndpoints>(url: E, params?: ApiGetParamsInput<E>) => Promise<ApiResponse<'get', E>>
+  get: <E extends GetEndpoint>(url: E, params?: ApiGetParamsInput<E>) => Promise<ApiResponse<'get', E>>
   post: {
-    <E extends PostEndpoints>(
+    <E extends PostEndpoint>(
       url: E,
-      data: ApiRequest<'post', E>,
+      ...args: ApiPostRequestArgs<E>
     ): Promise<Result<ApiResponse<'post', E>, ApiError<'post', E>>>
-    <T, E = unknown>(url: string, data?: unknown): Promise<Result<T, E>>
   }
   put: {
-    <E extends PutEndpoints>(
+    <E extends PutEndpoint>(
       url: E,
-      data: ApiRequest<'put', E>,
+      ...args: ApiPutRequestArgs<E>
     ): Promise<Result<ApiResponse<'put', E>, ApiError<'put', E>>>
-    <T, E = unknown>(url: string, data?: unknown): Promise<Result<T, E>>
   }
   delete: {
-    <E extends DeleteEndpoints>(url: E): Promise<ApiResponse<'delete', E>>
-    <T = void>(url: string): Promise<T>
+    <E extends DeleteEndpoint>(url: E): Promise<ApiResponse<'delete', E>>
   }
 }>
 
@@ -129,7 +132,7 @@ export const createApiClient = (
   }
 
   return {
-    get: async <E extends GetEndpoints>(url: E, params?: ApiGetParamsInput<E>): Promise<ApiResponse<'get', E>> =>
+    get: async <E extends GetEndpoint>(url: E, params?: ApiGetParamsInput<E>): Promise<ApiResponse<'get', E>> =>
       withTracking(async () => {
         const resolvedParams = resolveParams(params)
         const resolvedOptions = resolveOptions(params)
@@ -161,35 +164,43 @@ export const createApiClient = (
         }
       }),
 
-    post: async <T, E>(url: string, data?: unknown): Promise<Result<T, E>> =>
+    post: async <E extends PostEndpoint>(
+      url: E,
+      ...args: ApiPostRequestArgs<E>
+    ): Promise<Result<ApiResponse<'post', E>, ApiError<'post', E>>> =>
       withTracking(async () => {
+        const data = args[0]
         try {
-          const response = await axiosInstance.post<T>(url, data)
+          const response = await axiosInstance.post<ApiResponse<'post', E>>(url, data)
           return ok(response.data)
         } catch (error) {
           if (isAxiosError(error) && error.response?.status === 422) {
-            return err(error.response.data as E)
+            return err(error.response.data as ApiError<'post', E>)
           }
           throw error
         }
       }),
 
-    put: async <T, E>(url: string, data?: unknown): Promise<Result<T, E>> =>
+    put: async <E extends PutEndpoint>(
+      url: E,
+      ...args: ApiPutRequestArgs<E>
+    ): Promise<Result<ApiResponse<'put', E>, ApiError<'put', E>>> =>
       withTracking(async () => {
+        const data = args[0]
         try {
-          const response = await axiosInstance.put<T>(url, data)
+          const response = await axiosInstance.put<ApiResponse<'put', E>>(url, data)
           return ok(response.data)
         } catch (error) {
           if (isAxiosError(error) && error.response?.status === 422) {
-            return err(error.response.data as E)
+            return err(error.response.data as ApiError<'put', E>)
           }
           throw error
         }
       }),
 
-    delete: async <T>(url: string): Promise<T> =>
+    delete: async <E extends DeleteEndpoint>(url: E): Promise<ApiResponse<'delete', E>> =>
       withTracking(async () => {
-        const response = await axiosInstance.delete<T>(url)
+        const response = await axiosInstance.delete<ApiResponse<'delete', E>>(url)
         return response.data
       }),
   }
