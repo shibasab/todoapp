@@ -1,18 +1,7 @@
-import type { Auth } from '../models/auth'
+import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@todoapp/shared'
+
 import type { ValidationErrorResponse } from '../models/error'
 import type { CreateTodoRequest, Todo, TodoSearchQuery, UpdateTodoRequest } from '../models/todo'
-import type { User } from '../models/user'
-
-export type LoginRequest = Readonly<{
-  username: string
-  password: string
-}>
-
-export type RegisterRequest = Readonly<{
-  username: string
-  email: string
-  password: string
-}>
 
 export type ApiEndpoints = {
   get: {
@@ -21,8 +10,8 @@ export type ApiEndpoints = {
   }
   post: {
     '/todo/': { request: CreateTodoRequest; response: Todo; error: ValidationErrorResponse }
-    '/auth/login': { request: LoginRequest; response: Auth }
-    '/auth/register': { request: RegisterRequest; response: Auth }
+    '/auth/login': { request: LoginRequest; response: AuthResponse }
+    '/auth/register': { request: RegisterRequest; response: AuthResponse }
     '/auth/logout': { response: void }
   }
   put: {

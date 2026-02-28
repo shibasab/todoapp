@@ -1,4 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
+import {
+  CreateTodoRequestSchema,
+  ListTodoQuerySchema,
+  UpdateTodoRequestSchema,
+} from "@todoapp/shared";
 import { Hono } from "hono";
 import type { AuthConfig } from "../../domain/auth/types";
 import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
@@ -13,12 +18,7 @@ import {
   createUpdateTodoUseCase,
 } from "../../usecases/todo/write-todos";
 import { toTodoValidationError, type TodoUseCaseError } from "../../usecases/todo/errors";
-import {
-  createTodoBodySchema,
-  listTodoQuerySchema,
-  todoIdParamSchema,
-  updateTodoBodySchema,
-} from "./schemas";
+import { todoIdParamSchema } from "./schemas";
 import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
 import { toTodoHttpError } from "./to-http-error";
 
@@ -75,7 +75,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return context.json({ detail: authenticated.error.detail }, 401);
     }
 
-    const parsedQuery = listTodoQuerySchema.safeParse(context.req.query());
+    const parsedQuery = ListTodoQuerySchema.safeParse(context.req.query());
     if (!parsedQuery.success) {
       return respondError(
         context,
@@ -124,7 +124,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = createTodoBodySchema.safeParse(rawBody.data);
+    const parsedBody = CreateTodoRequestSchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
@@ -199,7 +199,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       );
     }
 
-    const parsedBody = updateTodoBodySchema.safeParse(rawBody.data);
+    const parsedBody = UpdateTodoRequestSchema.safeParse(rawBody.data);
     if (!parsedBody.success) {
       return respondError(
         context,
