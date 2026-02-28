@@ -11,7 +11,9 @@
     "pedantic": "allow"
   },
   "rules": {
+    "no-unused-vars": "deny",
     "no-throw-literal": "deny",
+    "typescript/no-extraneous-class": "deny",
     "typescript/only-throw-error": "deny",
     "typescript/no-floating-promises": "deny",
     "typescript/switch-exhaustiveness-check": "deny"
