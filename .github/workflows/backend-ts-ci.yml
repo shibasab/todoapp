@@ -10,6 +10,8 @@ on:
     paths:
       - "backend/**"
       - "shared/**"
+      - "configs/oxlint/base.json"
+      - "configs/oxlint/node.json"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/backend-ts-ci.yml"
