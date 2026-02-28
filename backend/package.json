@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "npm run prisma:generate",
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
     "prelint": "npm run prisma:generate",
@@ -14,9 +15,7 @@
     "format:check": "oxfmt --check src tests vitest.config.ts tsconfig.json package.json",
     "pretypecheck": "npm run prisma:generate",
     "typecheck": "tsgo",
-    "pretest": "npm run prisma:generate",
     "test": "vitest run",
-    "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:db:push": "prisma db push --schema prisma/schema.prisma"
