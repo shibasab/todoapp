@@ -24,7 +24,7 @@ const getTodoDetailErrors = (value: string): readonly ValidationError[] => {
 }
 
 const getTodoDueDateErrors = (
-  dueDate: string | null,
+  dueDate: string | null | undefined,
   recurrenceType: TodoRecurrenceType,
 ): readonly ValidationError[] => {
   if (recurrenceType === 'none' || dueDate != null) {
@@ -40,7 +40,7 @@ const getTodoDueDateErrors = (
 const validateTodoForm = (
   name: string,
   detail: string,
-  dueDate: string | null,
+  dueDate: string | null | undefined,
   recurrenceType: TodoRecurrenceType,
 ): readonly ValidationError[] => {
   return [...getTodoNameErrors(name), ...getTodoDetailErrors(detail), ...getTodoDueDateErrors(dueDate, recurrenceType)]
@@ -80,14 +80,14 @@ type TodoService = Readonly<{
   todos: readonly Todo[]
   isLoading: boolean
   fetchTodos: (criteria?: TodoSearchState) => Promise<void>
-  addTodo: (todo: Omit<Todo, 'id'>) => Promise<readonly ValidationError[] | undefined>
+  addTodo: (todo: CreateTodoRequest) => Promise<readonly ValidationError[] | undefined>
   updateTodo: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   toggleTodoCompletion: (todo: Todo) => Promise<void>
   removeTodo: (id: number) => Promise<void>
   validateTodo: (
     name: string,
     detail: string,
-    dueDate: string | null,
+    dueDate: string | null | undefined,
     recurrenceType: TodoRecurrenceType,
   ) => readonly ValidationError[]
 }>
@@ -98,13 +98,13 @@ const buildTodoSearchParams = (criteria?: TodoSearchState): TodoSearchParams | u
   }
 
   const keyword = criteria.keyword.trim()
-  const progress_status = criteria.status === 'all' ? undefined : criteria.status
-  const due_date = criteria.dueDate === 'all' ? undefined : criteria.dueDate
+  const progressStatus = criteria.status === 'all' ? undefined : criteria.status
+  const dueDate = criteria.dueDate === 'all' ? undefined : criteria.dueDate
 
   const params: TodoSearchParams = {
     ...(keyword === '' ? {} : { keyword }),
-    ...(progress_status ? { progress_status } : {}),
-    ...(due_date ? { due_date } : {}),
+    ...(progressStatus ? { progressStatus } : {}),
+    ...(dueDate ? { dueDate } : {}),
   }
 
   return Object.keys(params).length > 0 ? params : undefined

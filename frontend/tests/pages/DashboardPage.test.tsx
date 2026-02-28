@@ -248,6 +248,16 @@ describe('DashboardPage', () => {
         expect(requestLog).toMatchSnapshot('api-requests-search')
       })
       expect(requestLog).toHaveLength(1)
+
+      expect(requestLog[0]).toMatchObject({
+        method: 'GET',
+        url: '/todo/',
+        query: {
+          keyword: 'Test',
+          progressStatus: 'completed',
+          dueDate: 'today',
+        },
+      })
     })
   })
 
