@@ -9,6 +9,8 @@ on:
       - ready_for_review
     paths:
       - "frontend/**"
+      - "configs/oxlint/base.json"
+      - "configs/oxlint/browser-react.json"
       - ".github/workflows/frontend-ci.yml"
 
 jobs:
