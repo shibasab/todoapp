@@ -305,6 +305,29 @@ describe("todo read api", () => {
     }
   });
 
+  it("GET /api/todo/ は不正progressStatusで422を返す", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(
+        testApp.app,
+        "query-status-user",
+        "query-status-user@example.com",
+      );
+      const response = await testApp.app.request("/api/todo/?progressStatus=invalid", {
+        method: "GET",
+        headers: toAuthHeader(auth.token),
+      });
+      const body = await readJson<ValidationErrorBody>(response);
+
+      expect(response.status).toBe(422);
+      expect(body.detail).toBe("Validation error");
+      expect(body.errors).toContainEqual({ field: "progressStatus", reason: "invalid_format" });
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("GET /api/todo/ は不正dueDateで422を返す", async () => {
     const testApp = await setupTodoTestApp();
 
