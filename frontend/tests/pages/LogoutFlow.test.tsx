@@ -44,6 +44,12 @@ describe('ログアウトフロー', () => {
         expect(within(container).getByText('Welcome testuser')).toBeInTheDocument()
       })
 
+      // Dashboardの初期ロードで発生するリクエスト完了まで待機
+      await waitFor(() => {
+        const todoRequest = requestLog.find((r) => r.url === '/todo/' && r.method === 'GET')
+        expect(todoRequest).toBeDefined()
+      })
+
       // 初期リクエストをクリア
       clearRequests()
 
