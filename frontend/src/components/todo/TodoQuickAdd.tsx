@@ -1,7 +1,7 @@
 import { useCallback, useState, type ChangeEvent, type FormEvent } from 'react'
 
 import type { ValidationError } from '../../models/error'
-import type { Todo } from '../../models/todo'
+import type { CreateTodoInput } from '../../models/todo'
 
 import { TODO_NAME_MAX_LENGTH } from '../../hooks/useTodo'
 import { parseTodoQuickAddInput } from '../../services/todoQuickAddParser'
@@ -9,7 +9,7 @@ import { mergeValidationErrors } from '../../services/validation'
 import { FieldError } from '../FieldError'
 
 type TodoQuickAddProps = Readonly<{
-  onSubmit: (todo: Omit<Todo, 'id'>) => Promise<readonly ValidationError[] | undefined>
+  onSubmit: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
 export const TodoQuickAdd = ({ onSubmit }: TodoQuickAddProps) => {
@@ -41,6 +41,7 @@ export const TodoQuickAdd = ({ onSubmit }: TodoQuickAddProps) => {
       dueDate: parsed.dueDate,
       progressStatus: 'not_started',
       recurrenceType: 'none',
+      parentId: null,
     })
     if (validationErrors != null && validationErrors.length > 0) {
       mergeErrors(validationErrors)

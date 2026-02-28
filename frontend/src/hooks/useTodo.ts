@@ -1,7 +1,7 @@
 import { todoPath } from '@todoapp/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { CreateTodoRequest, Todo, TodoRecurrenceType } from '../models/todo'
+import type { CreateTodoInput, Todo, TodoRecurrenceType } from '../models/todo'
 import type { TodoSearchParams, TodoSearchState } from './todoSearch'
 
 import { useApiClient } from '../contexts/ApiContext'
@@ -81,7 +81,7 @@ type TodoService = Readonly<{
   todos: readonly Todo[]
   isLoading: boolean
   fetchTodos: (criteria?: TodoSearchState) => Promise<void>
-  addTodo: (todo: CreateTodoRequest) => Promise<readonly ValidationError[] | undefined>
+  addTodo: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
   updateTodo: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   toggleTodoCompletion: (todo: Todo) => Promise<void>
   removeTodo: (id: number) => Promise<void>
@@ -134,7 +134,7 @@ export const useTodo = (): TodoService => {
   )
 
   const addTodo = useCallback(
-    async (data: CreateTodoRequest): Promise<readonly ValidationError[] | undefined> => {
+    async (data: CreateTodoInput): Promise<readonly ValidationError[] | undefined> => {
       // クライアントバリデーション
       const clientErrors = validateTodoForm(data.name, data.detail, data.dueDate, data.recurrenceType)
       if (clientErrors.length > 0) {

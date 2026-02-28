@@ -1,15 +1,15 @@
 import { useCallback, useState, type FormEvent, type ChangeEvent } from 'react'
 
 import type { ValidationError } from '../../models/error'
+import type { CreateTodoInput, TodoRecurrenceType } from '../../models/todo'
 
 import { TODO_NAME_MAX_LENGTH, TODO_DETAIL_MAX_LENGTH, useTodoFieldValidation } from '../../hooks/useTodo'
-import { Todo, TodoRecurrenceType } from '../../models/todo'
 import { mergeValidationErrors } from '../../services/validation'
 import { FieldError } from '../FieldError'
 import { ValidatedInput } from '../ValidatedInput'
 
 type TodoFormProps = Readonly<{
-  onSubmit: (todo: Omit<Todo, 'id'>) => Promise<readonly ValidationError[] | undefined>
+  onSubmit: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
 type FormState = Readonly<{
@@ -48,6 +48,7 @@ export const TodoForm = ({ onSubmit }: TodoFormProps) => {
       dueDate,
       progressStatus: 'not_started',
       recurrenceType: formState.recurrenceType,
+      parentId: null,
     })
     if (validationErrors != null && validationErrors.length > 0) {
       mergeErrors(validationErrors)
