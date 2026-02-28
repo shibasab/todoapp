@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { AuthResponse, DetailErrorResponse, User } from "@todoapp/shared";
+import type { DetailErrorResponse } from "@todoapp/shared";
 import { Hono } from "hono";
 import { toAuthInvalidFormatError } from "../../domain/auth/errors";
 import type { AuthConfig } from "../../domain/auth/types";
@@ -11,6 +11,7 @@ import { toAuthValidationError, type AuthUseCaseError } from "../../usecases/aut
 import { createLoginUseCase, createRegisterUseCase } from "../../usecases/auth/register-login";
 import type { AuthUseCases } from "../../usecases/auth/types";
 import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
+import { toAuthResponseDto, toUserDto } from "./mappers";
 import { loginBodySchema, registerBodySchema } from "./schemas";
 import { toAuthHttpError } from "./to-http-error";
 
@@ -73,8 +74,7 @@ export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono 
       return respondError(context, registered.error);
     }
 
-    const responseBody: AuthResponse = registered.data;
-    return context.json(responseBody);
+    return context.json(toAuthResponseDto(registered.data));
   });
 
   router.post("/login", async (context) => {
@@ -96,8 +96,7 @@ export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono 
       return respondError(context, loggedIn.error);
     }
 
-    const responseBody: AuthResponse = loggedIn.data;
-    return context.json(responseBody);
+    return context.json(toAuthResponseDto(loggedIn.data));
   });
 
   router.post("/logout", async (context) => {
@@ -118,8 +117,7 @@ export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono 
       return respondError(context, authenticated.error);
     }
 
-    const responseBody: User = authenticated.data;
-    return context.json(responseBody);
+    return context.json(toUserDto(authenticated.data));
   });
 
   return router;

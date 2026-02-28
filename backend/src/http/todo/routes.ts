@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { DetailErrorResponse, Todo } from "@todoapp/shared";
+import type { DetailErrorResponse } from "@todoapp/shared";
 import { Hono } from "hono";
 import type { AuthConfig } from "../../domain/auth/types";
 import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
@@ -21,6 +21,7 @@ import {
   updateTodoBodySchema,
 } from "./schemas";
 import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
+import { toTodoListDto, toTodoDto } from "./mappers";
 import { toTodoHttpError } from "./to-http-error";
 
 export type TodoHttpRouteDependencies = Readonly<{
@@ -106,8 +107,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    const responseBody: readonly Todo[] = result.data;
-    return context.json(responseBody);
+    return context.json(toTodoListDto(result.data));
   });
 
   router.post("/", async (context) => {
@@ -158,8 +158,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    const responseBody: Todo = result.data;
-    return context.json(responseBody, 201);
+    return context.json(toTodoDto(result.data), 201);
   });
 
   router.get("/:todoId", async (context) => {
@@ -187,8 +186,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    const responseBody: Todo = result.data;
-    return context.json(responseBody);
+    return context.json(toTodoDto(result.data));
   });
 
   router.put("/:todoId", async (context) => {
@@ -257,8 +255,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    const responseBody: Todo = result.data;
-    return context.json(responseBody);
+    return context.json(toTodoDto(result.data));
   });
 
   router.delete("/:todoId", async (context) => {
