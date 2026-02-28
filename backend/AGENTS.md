@@ -68,3 +68,11 @@ backend/src/
 - データの状態表現は ADT（直積・直和）で設計する
 - 直和型の分岐は `switch` と `assertNever` による網羅性チェックを行う
 - 変更には必ず関連する自動テストを同梱する（既存テストでカバー済みなら追加不要）
+
+## テスト実装ルール（API / DB）
+
+- API統合テスト（`backend/tests/*api*.test.ts` と `auth.test.ts` / `todo.test.ts`）では、`tests/support/sqlite-api-test-harness.ts` のテンプレートDB方式を使う。
+- テンプレートDB方式では、スキーマ適用済みSQLiteを1回だけ作成し、各テストケースでDBファイルを複製して専用DBを使う。
+- 目的は「テストケース間の独立性維持」と「`prisma db push` の繰り返し削減による実行時間短縮」の両立。
+- APIテストで初期化方針を変えるときは、テストケース・アサーションを変えずに、実行時間とカバレッジの比較結果を確認してから導入する。
+- `cloneTemporarySqliteDatabase` はSQLite向け最適化のため、将来PostgreSQL/MySQLへ移行する場合は同等の分離戦略（例: ワーカー単位DB）へ置き換える前提で扱う。

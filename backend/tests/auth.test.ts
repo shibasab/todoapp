@@ -1,12 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 import { createApp, type AppDependencies } from "../src/app";
-import {
-  createPrismaClient,
-  createTemporarySqliteDatabase,
-  ensureSqliteSchema,
-} from "../src/infra/prisma/testing";
 import { createAccessToken } from "../src/infra/auth/jwt-token-port";
+import { createSqliteApiTestAppFactory } from "./support/sqlite-api-test-harness";
 
 type AuthSuccessBody = Readonly<{
   user: Readonly<{
@@ -64,28 +60,13 @@ const authDependencies = (): Pick<AppDependencies, "authConfig"> => ({
   },
 });
 
-const setupAuthTestApp = async () => {
-  const temporaryDatabase = await createTemporarySqliteDatabase();
-  const schemaResult = await ensureSqliteSchema(temporaryDatabase.databaseUrl);
-  if (!schemaResult.ok) {
-    throw new Error(JSON.stringify(schemaResult.error));
-  }
+const { cleanupTemplateDatabase, setupApiTestApp } = createSqliteApiTestAppFactory();
 
-  const prisma = createPrismaClient(temporaryDatabase.databaseUrl);
-  const app = createApp({
-    prisma,
-    ...authDependencies(),
-  });
+const setupAuthTestApp = async () => setupApiTestApp(authDependencies());
 
-  return {
-    app,
-    prisma,
-    cleanup: async () => {
-      await prisma.$disconnect();
-      await temporaryDatabase.cleanup();
-    },
-  };
-};
+afterAll(async () => {
+  await cleanupTemplateDatabase();
+});
 
 describe("auth routes", () => {
   it("POST /api/auth/register でユーザー登録とトークン発行ができる", async () => {

@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { createApp, type AppDependencies } from "../src/app";
-import {
-  createPrismaClient,
-  createTemporarySqliteDatabase,
-  ensureSqliteSchema,
-} from "../src/infra/prisma/testing";
+import { createSqliteApiTestAppFactory } from "./support/sqlite-api-test-harness";
 
 type AuthBody = Readonly<{
   user: Readonly<{
@@ -57,28 +53,13 @@ const authDependencies = (): Pick<AppDependencies, "authConfig"> => ({
   },
 });
 
-const setupTodoTestApp = async () => {
-  const temporaryDatabase = await createTemporarySqliteDatabase();
-  const schemaResult = await ensureSqliteSchema(temporaryDatabase.databaseUrl);
-  if (!schemaResult.ok) {
-    throw new Error(JSON.stringify(schemaResult.error));
-  }
+const { cleanupTemplateDatabase, setupApiTestApp } = createSqliteApiTestAppFactory();
 
-  const prisma = createPrismaClient(temporaryDatabase.databaseUrl);
-  const app = createApp({
-    prisma,
-    ...authDependencies(),
-  });
+const setupTodoTestApp = async () => setupApiTestApp(authDependencies());
 
-  return {
-    app,
-    prisma,
-    cleanup: async () => {
-      await prisma.$disconnect();
-      await temporaryDatabase.cleanup();
-    },
-  };
-};
+afterAll(async () => {
+  await cleanupTemplateDatabase();
+});
 
 const register = async (
   app: ReturnType<typeof createApp>,
