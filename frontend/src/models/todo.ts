@@ -1,30 +1,29 @@
 /**
  * TODO型定義
  */
-export type TodoRecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly'
-export type TodoProgressStatus = 'not_started' | 'in_progress' | 'completed'
+import type {
+  CreateTodoRequest as SharedCreateTodoRequest,
+  ListTodoQuery,
+  Todo as SharedTodo,
+  TodoDueDateFilter as SharedTodoDueDateFilter,
+  TodoProgressStatus,
+  TodoRecurrenceType,
+  UpdateTodoRequest as SharedUpdateTodoRequest,
+} from '@todoapp/shared'
 
-export type Todo = Readonly<{
-  id: number
-  name: string
-  detail: string
-  dueDate: string | null
-  progressStatus: TodoProgressStatus
-  recurrenceType: TodoRecurrenceType
-}>
+export type Todo = Pick<SharedTodo, 'id' | 'name' | 'detail' | 'dueDate' | 'progressStatus' | 'recurrenceType'>
 
-export type CreateTodoRequest = Omit<Todo, 'id'>
-
-export type UpdateTodoRequest = Omit<Todo, 'id'>
+export type CreateTodoRequest = Omit<SharedCreateTodoRequest, 'parentId'> &
+  Readonly<{
+    parentId?: SharedCreateTodoRequest['parentId']
+  }>
+export type UpdateTodoRequest = SharedUpdateTodoRequest
 
 export type TodoStatusFilter = 'all' | TodoProgressStatus
-export type TodoDueDateFilter = 'all' | 'today' | 'this_week' | 'overdue' | 'none'
+export type TodoDueDateFilter = SharedTodoDueDateFilter
 
 export type TodoSearchParamStatus = Exclude<TodoStatusFilter, 'all'>
 export type TodoSearchParamDueDate = Exclude<TodoDueDateFilter, 'all'>
 
-export type TodoSearchQuery = Readonly<{
-  keyword?: string
-  progress_status?: TodoSearchParamStatus
-  due_date?: TodoSearchParamDueDate
-}>
+export type TodoSearchQuery = ListTodoQuery
+export type { TodoProgressStatus, TodoRecurrenceType }

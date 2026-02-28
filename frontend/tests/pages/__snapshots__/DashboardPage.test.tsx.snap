@@ -55,9 +55,9 @@ exports[`DashboardPage > 検索・フィルタ > 検索条件の変更後にデ�
   {
     "method": "GET",
     "query": {
-      "due_date": "today",
+      "dueDate": "today",
       "keyword": "Test",
-      "progress_status": "completed",
+      "progressStatus": "completed",
     },
     "url": "/todo/",
   },
