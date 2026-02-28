@@ -115,7 +115,7 @@ npm run typecheck
 
 ### Commit & Pull Request Guidelines
 
-- Create commits with `committer "<msg>" <file...>;` avoid manual staging.
+- Create commits with committer `"<msg>" <file...>;` avoid manual staging.
 - Follow Conventional Commits + action-oriented subjects.
 - Group related changes; avoid bundling unrelated refactors.
 - PRs should summarize scope, note testing performed, and mention any user-facing changes or new flags.
