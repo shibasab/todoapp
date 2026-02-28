@@ -20,5 +20,14 @@
     "typecheck:frontend": "npm run -w frontend typecheck",
     "typecheck:backend": "npm run -w backend typecheck",
     "typecheck:shared": "npm run -w shared typecheck"
+  },
+  "overrides": {
+    "typescript": "^5.9.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260228.1",
+    "oxlint": "^1.50.0",
+    "oxfmt": "^0.22.0",
+    "oxlint-tsgolint": "^0.11.0",
+    "vitest": "^4.0.16",
+    "@vitest/coverage-v8": "^4.0.16"
   }
 }
