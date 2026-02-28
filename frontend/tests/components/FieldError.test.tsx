@@ -26,4 +26,12 @@ describe('FieldError', () => {
 
     expect(summarizeText(container)).toMatchSnapshot('text')
   })
+
+  it('未知のreasonでも汎用メッセージを表示する', () => {
+    const unknownErrors: readonly ValidationError[] = [{ field: 'name', reason: 'other_reason' }]
+
+    const { container } = render(<FieldError errors={unknownErrors} fieldName="name" fieldLabel="タスク名" />)
+
+    expect(summarizeText(container)).toContain('タスク名の入力内容を確認してください')
+  })
 })

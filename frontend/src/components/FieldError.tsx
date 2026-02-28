@@ -14,15 +14,17 @@ const toErrorMessage = (error: ValidationError, fieldLabel: string): string => {
     case 'unique_violation':
       return `この${fieldLabel}は既に使用されています`
     case 'max_length':
-      return `${fieldLabel}は${error.limit}文字以内で入力してください`
+      return typeof error.limit === 'number'
+        ? `${fieldLabel}は${error.limit}文字以内で入力してください`
+        : `${fieldLabel}が長すぎます`
     case 'min_length':
-      return `${fieldLabel}は${error.limit}文字以上で入力してください`
+      return typeof error.limit === 'number'
+        ? `${fieldLabel}は${error.limit}文字以上で入力してください`
+        : `${fieldLabel}が短すぎます`
     case 'invalid_format':
       return `${fieldLabel}の形式が正しくありません`
-    default: {
-      const exhaustiveCheck: never = reason
-      throw new Error(`Not Exhaustive: ${exhaustiveCheck}`)
-    }
+    default:
+      return `${fieldLabel}の入力内容を確認してください`
   }
 }
 
