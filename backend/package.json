@@ -15,7 +15,7 @@
     "pretypecheck": "npm run prisma:generate",
     "typecheck": "tsgo",
     "pretest": "npm run prisma:generate",
-    "test": "bun test || vitest run",
+    "test": "vitest run",
     "pretest:coverage": "npm run prisma:generate",
     "test:coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
