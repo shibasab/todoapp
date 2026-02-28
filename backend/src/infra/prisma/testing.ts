@@ -1,5 +1,5 @@
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { copyFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +63,21 @@ const runPrismaDbPush = (
 const isExecutableNotFound = (result: SpawnSyncReturns<string>): boolean =>
   (result.error as NodeJS.ErrnoException | undefined)?.code === "ENOENT";
 
+const SQLITE_FILE_URL_PREFIX = "file:";
+
+const readSqliteDatabasePath = (databaseUrl: string): string => {
+  if (!databaseUrl.startsWith(SQLITE_FILE_URL_PREFIX)) {
+    throw new Error(`Unsupported sqlite database url: ${databaseUrl}`);
+  }
+
+  const databasePath = databaseUrl.slice(SQLITE_FILE_URL_PREFIX.length);
+  if (databasePath === "") {
+    throw new Error("SQLite database url does not include a file path");
+  }
+
+  return databasePath;
+};
+
 export const createTemporarySqliteDatabase = async (): Promise<TemporarySqliteDatabase> => {
   const tempDirectory = await mkdtemp(join(tmpdir(), "todoapp-prisma-"));
   const databasePath = join(tempDirectory, "test.db");
@@ -74,6 +89,23 @@ export const createTemporarySqliteDatabase = async (): Promise<TemporarySqliteDa
       await rm(tempDirectory, { recursive: true, force: true });
     },
   };
+};
+
+export const cloneTemporarySqliteDatabase = async (
+  sourceDatabaseUrl: string,
+): Promise<TemporarySqliteDatabase> => {
+  const sourceDatabasePath = readSqliteDatabasePath(sourceDatabaseUrl);
+  const clonedDatabase = await createTemporarySqliteDatabase();
+  const clonedDatabasePath = readSqliteDatabasePath(clonedDatabase.databaseUrl);
+
+  try {
+    await copyFile(sourceDatabasePath, clonedDatabasePath);
+  } catch (error) {
+    await clonedDatabase.cleanup();
+    throw error;
+  }
+
+  return clonedDatabase;
 };
 
 export const ensureSqliteSchema = async (
