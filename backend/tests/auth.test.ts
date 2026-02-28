@@ -111,6 +111,48 @@ describe("auth routes", () => {
     }
   });
 
+  it("POST /api/auth/register は email=null を受理して空文字として登録する", async () => {
+    const testApp = await setupAuthTestApp();
+
+    try {
+      const response = await testApp.app.request(
+        createJsonRequest("/api/auth/register", {
+          username: "null-email-user",
+          email: null,
+          password: "null-email-password",
+        }),
+      );
+      const body = await readJson<AuthSuccessBody>(response);
+
+      expect(response.status).toBe(200);
+      expect(body.user.email).toBe("");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("POST /api/auth/register は型不正emailで422を返す", async () => {
+    const testApp = await setupAuthTestApp();
+
+    try {
+      const response = await testApp.app.request(
+        createJsonRequest("/api/auth/register", {
+          username: "typed-email-user",
+          email: 123,
+          password: "typed-email-password",
+        }),
+      );
+      const body = await readJson<ValidationErrorBody>(response);
+
+      expect(response.status).toBe(422);
+      expect(body.type).toBe("validation_error");
+      expect(body.detail).toBe("Validation error");
+      expect(body.errors[0]?.field).toBe("email");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
   it("POST /api/auth/register は重複ユーザー名で409を返す", async () => {
     const testApp = await setupAuthTestApp();
 
