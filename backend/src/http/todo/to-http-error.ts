@@ -1,10 +1,20 @@
-import type { TodoUseCaseError } from "../../usecases/todo/errors";
+import type {
+  DetailErrorResponse,
+  ValidationErrorResponse,
+  ValidationIssue,
+} from "@todoapp/shared";
 import { assertNever } from "../../shared/error";
+import type { TodoUseCaseError } from "../../usecases/todo/errors";
 
-export type HttpError = Readonly<{
-  status: number;
-  body: Readonly<Record<string, unknown>>;
-}>;
+export type HttpError =
+  | Readonly<{
+      status: 422;
+      body: ValidationErrorResponse;
+    }>
+  | Readonly<{
+      status: 401 | 404 | 409 | 500;
+      body: DetailErrorResponse;
+    }>;
 
 export const toTodoHttpError = (errorValue: TodoUseCaseError): HttpError => {
   switch (errorValue.type) {
@@ -15,7 +25,12 @@ export const toTodoHttpError = (errorValue: TodoUseCaseError): HttpError => {
           status: 422,
           type: "validation_error",
           detail: errorValue.detail,
-          errors: errorValue.errors,
+          errors: errorValue.errors.map(
+            (error): ValidationIssue => ({
+              field: error.field,
+              reason: error.reason,
+            }),
+          ),
         },
       };
     case "Unauthorized":

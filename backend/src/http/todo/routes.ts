@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import type { DetailErrorResponse, Todo } from "@todoapp/shared";
 import { Hono } from "hono";
 import type { AuthConfig } from "../../domain/auth/types";
 import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
@@ -72,7 +73,10 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
   router.get("/", async (context) => {
     const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: authenticated.error.detail }, 401);
+      const responseBody: DetailErrorResponse = {
+        detail: authenticated.error.detail,
+      };
+      return context.json(responseBody, 401);
     }
 
     const parsedQuery = listTodoQuerySchema.safeParse(context.req.query());
@@ -102,13 +106,17 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    return context.json(result.data);
+    const responseBody: readonly Todo[] = result.data;
+    return context.json(responseBody);
   });
 
   router.post("/", async (context) => {
     const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: authenticated.error.detail }, 401);
+      const responseBody: DetailErrorResponse = {
+        detail: authenticated.error.detail,
+      };
+      return context.json(responseBody, 401);
     }
 
     const rawBody = await readJsonBody(context);
@@ -150,18 +158,25 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    return context.json(result.data, 201);
+    const responseBody: Todo = result.data;
+    return context.json(responseBody, 201);
   });
 
   router.get("/:todoId", async (context) => {
     const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: authenticated.error.detail }, 401);
+      const responseBody: DetailErrorResponse = {
+        detail: authenticated.error.detail,
+      };
+      return context.json(responseBody, 401);
     }
 
     const parsedParams = todoIdParamSchema.safeParse(context.req.param());
     if (!parsedParams.success) {
-      return context.json({ detail: "Todo not found" }, 404);
+      const responseBody: DetailErrorResponse = {
+        detail: "Todo not found",
+      };
+      return context.json(responseBody, 404);
     }
 
     const result = await getTodo({
@@ -172,18 +187,25 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    return context.json(result.data);
+    const responseBody: Todo = result.data;
+    return context.json(responseBody);
   });
 
   router.put("/:todoId", async (context) => {
     const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: authenticated.error.detail }, 401);
+      const responseBody: DetailErrorResponse = {
+        detail: authenticated.error.detail,
+      };
+      return context.json(responseBody, 401);
     }
 
     const parsedParams = todoIdParamSchema.safeParse(context.req.param());
     if (!parsedParams.success) {
-      return context.json({ detail: "Todo not found" }, 404);
+      const responseBody: DetailErrorResponse = {
+        detail: "Todo not found",
+      };
+      return context.json(responseBody, 404);
     }
 
     const rawBody = await readJsonBody(context);
@@ -235,18 +257,25 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       return respondError(context, result.error);
     }
 
-    return context.json(result.data);
+    const responseBody: Todo = result.data;
+    return context.json(responseBody);
   });
 
   router.delete("/:todoId", async (context) => {
     const authenticated = await authenticate(context.req.header("Authorization"));
     if (!authenticated.ok) {
-      return context.json({ detail: authenticated.error.detail }, 401);
+      const responseBody: DetailErrorResponse = {
+        detail: authenticated.error.detail,
+      };
+      return context.json(responseBody, 401);
     }
 
     const parsedParams = todoIdParamSchema.safeParse(context.req.param());
     if (!parsedParams.success) {
-      return context.json({ detail: "Todo not found" }, 404);
+      const responseBody: DetailErrorResponse = {
+        detail: "Todo not found",
+      };
+      return context.json(responseBody, 404);
     }
 
     const result = await deleteTodo({
