@@ -1,11 +1,18 @@
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@todoapp/shared'
-
-import type { ValidationErrorResponse } from '../models/error'
-import type { CreateTodoRequest, Todo, TodoSearchQuery, UpdateTodoRequest } from '../models/todo'
+import type {
+  AuthResponse,
+  CreateTodoRequest,
+  ListTodoQuery,
+  LoginRequest,
+  RegisterRequest,
+  Todo,
+  UpdateTodoRequest,
+  User,
+  ValidationErrorResponse,
+} from '@todoapp/shared'
 
 export type ApiEndpoints = {
   get: {
-    '/todo/': { query: TodoSearchQuery; response: readonly Todo[] }
+    '/todo/': { query: ListTodoQuery; response: readonly Todo[] }
     '/auth/user': { response: User }
   }
   post: {
