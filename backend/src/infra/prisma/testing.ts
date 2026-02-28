@@ -91,6 +91,7 @@ export const createTemporarySqliteDatabase = async (): Promise<TemporarySqliteDa
   };
 };
 
+// SQLite専用: file: URL のDBファイルをコピーし、同一スキーマの一時DBを高速に作る。
 export const cloneTemporarySqliteDatabase = async (
   sourceDatabaseUrl: string,
 ): Promise<TemporarySqliteDatabase> => {

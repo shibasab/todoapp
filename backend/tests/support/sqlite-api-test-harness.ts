@@ -15,6 +15,8 @@ type ApiTestApp = Readonly<{
   cleanup: () => Promise<void>;
 }>;
 
+// APIテスト高速化のため、スキーマ適用済みSQLiteをテンプレートとして1回だけ作成する。
+// 各テストはこのテンプレートを複製した専用DBを使い、テスト間の状態リークを防ぐ。
 export const createSqliteApiTestAppFactory = () => {
   let templateDatabasePromise: Promise<TemporarySqliteDatabase> | null = null;
 
@@ -35,6 +37,8 @@ export const createSqliteApiTestAppFactory = () => {
     return templateDatabasePromise;
   };
 
+  // `prisma db push` を各テストで毎回実行すると遅いため、
+  // テンプレートDBのファイル複製で初期化コストを下げる。
   const setupApiTestApp = async (dependencies: ApiTestDependencies): Promise<ApiTestApp> => {
     const templateDatabase = await getTemplateDatabase();
     const temporaryDatabase = await cloneTemporarySqliteDatabase(templateDatabase.databaseUrl);
