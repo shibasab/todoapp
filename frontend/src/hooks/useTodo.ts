@@ -85,7 +85,7 @@ type TodoService = Readonly<{
   fetchTodos: (criteria?: TodoSearchState) => Promise<void>
   addTodo: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
   updateTodo: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
-  toggleTodoCompletion: (todo: Todo) => Promise<string | undefined>
+  toggleTodoCompletion: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   removeTodo: (id: number) => Promise<void>
   validateTodo: (
     name: string,
@@ -173,7 +173,7 @@ export const useTodo = (): TodoService => {
   )
 
   const toggleTodoCompletion = useCallback(
-    async (todo: Todo): Promise<string | undefined> => {
+    async (todo: Todo): Promise<readonly ValidationError[] | undefined> => {
       try {
         // 現在の状態を反転させて更新
         const validationErrors = await updateTodo({
@@ -181,12 +181,17 @@ export const useTodo = (): TodoService => {
           progressStatus: todo.progressStatus === 'completed' ? 'not_started' : 'completed',
         })
         if (validationErrors) {
-          return '入力内容に誤りがあります'
+          return validationErrors
         }
         return
       } catch (error) {
         if (isAxiosError<{ detail?: string }>(error) && error.response?.status === 409) {
-          return error.response.data?.detail ?? '未完了のサブタスクがあるため完了できません'
+          return [
+            {
+              field: 'global',
+              reason: error.response.data?.detail ?? '未完了のサブタスクがあるため完了できません',
+            },
+          ]
         }
         throw error
       }

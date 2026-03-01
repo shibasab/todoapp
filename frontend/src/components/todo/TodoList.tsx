@@ -14,7 +14,7 @@ type TodoListProps = Readonly<{
   hasSearchCriteria: boolean
   onDelete: (id: number) => void
   onEdit: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
-  onToggleCompletion: (todo: Todo) => Promise<string | undefined>
+  onToggleCompletion: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   onCreateTodo?: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
@@ -39,7 +39,7 @@ export const TodoList = ({
   const [createTodoErrorsByParentId, setCreateTodoErrorsByParentId] = useState<
     Readonly<Record<number, readonly ValidationError[]>>
   >({})
-  const [toggleErrors, setToggleErrors] = useState<Readonly<Record<number, string | null>>>({})
+  const [toggleErrors, setToggleErrors] = useState<Readonly<Record<number, readonly ValidationError[]>>>({})
   const emptyMessage = hasSearchCriteria ? '条件に一致するタスクがありません' : 'タスクはありません'
   const recurrenceTypeLabel: Record<Todo['recurrenceType'], string> = {
     none: 'なし',
@@ -146,12 +146,12 @@ export const TodoList = ({
 
   const handleToggleCompletion = useCallback(
     async (todo: Todo) => {
-      const message = await onToggleCompletion(todo)
-      if (message == null) {
-        setToggleErrors((prev) => ({ ...prev, [todo.id]: null }))
+      const errors = await onToggleCompletion(todo)
+      if (errors == null || errors.length === 0) {
+        setToggleErrors((prev) => ({ ...prev, [todo.id]: [] }))
         return
       }
-      setToggleErrors((prev) => ({ ...prev, [todo.id]: message }))
+      setToggleErrors((prev) => ({ ...prev, [todo.id]: errors }))
     },
     [onToggleCompletion],
   )
@@ -367,7 +367,11 @@ export const TodoList = ({
                     )}
                   </div>
                 ) : null}
-                {toggleErrors[todo.id] ? <p className="mt-2 text-sm text-red-600">{toggleErrors[todo.id]}</p> : null}
+                {(toggleErrors[todo.id] ?? []).map((error) => (
+                  <p key={`${todo.id}-${error.field}-${error.reason}`} className="mt-2 text-sm text-red-600">
+                    {error.field === 'global' ? error.reason : '入力内容に誤りがあります'}
+                  </p>
+                ))}
               </div>
             )
           })

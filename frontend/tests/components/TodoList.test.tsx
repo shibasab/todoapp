@@ -24,7 +24,7 @@ describe('TodoList', () => {
         hasSearchCriteria={false}
         onDelete={vi.fn()}
         onEdit={vi.fn(async () => undefined)}
-        onToggleCompletion={vi.fn(async () => undefined as string | undefined)}
+        onToggleCompletion={vi.fn(async () => undefined)}
       />,
     )
 
@@ -77,7 +77,7 @@ describe('TodoList', () => {
 
   it('表示モードでトグル・削除が動作し、編集保存成功で表示モードへ戻る', async () => {
     const onDelete = vi.fn()
-    const onToggleCompletion = vi.fn(async () => undefined as string | undefined)
+    const onToggleCompletion = vi.fn(async () => undefined)
     const onEdit = vi.fn(async () => undefined)
 
     const { container } = render(
@@ -134,7 +134,7 @@ describe('TodoList', () => {
         hasSearchCriteria={true}
         onDelete={vi.fn()}
         onEdit={onEdit}
-        onToggleCompletion={vi.fn(async () => undefined as string | undefined)}
+        onToggleCompletion={vi.fn(async () => undefined)}
       />,
     )
 
@@ -147,5 +147,30 @@ describe('TodoList', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
     expect(summarizeText(container)).toMatchSnapshot('text')
     expect(summarizeFormControls(container)).toMatchSnapshot('form')
+  })
+
+  it('完了切り替え時にglobalエラーを表示する', async () => {
+    const onToggleCompletion = vi.fn(
+      async (): Promise<readonly ValidationError[]> => [
+        { field: 'global', reason: '未完了のサブタスクがあるため完了できません' },
+      ],
+    )
+
+    render(
+      <TodoList
+        todos={[TODO_ITEM]}
+        hasSearchCriteria={false}
+        onDelete={vi.fn()}
+        onEdit={vi.fn(async () => undefined)}
+        onToggleCompletion={onToggleCompletion}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('checkbox'))
+
+    await waitFor(() => {
+      expect(onToggleCompletion).toHaveBeenCalledWith(TODO_ITEM)
+      expect(screen.getByText('未完了のサブタスクがあるため完了できません')).toBeInTheDocument()
+    })
   })
 })
