@@ -24,6 +24,7 @@ describe('TodoForm', () => {
         dueDate: '2026-01-01',
         progressStatus: 'not_started',
         recurrenceType: 'weekly',
+        parentId: null,
       })
     })
 

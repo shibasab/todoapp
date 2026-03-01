@@ -8,16 +8,14 @@ import type {
   TodoDueDateFilter as SharedTodoDueDateFilter,
   TodoProgressStatus,
   TodoRecurrenceType,
-  UpdateTodoRequest as SharedUpdateTodoRequest,
 } from '@todoapp/shared'
 
 export type Todo = Pick<SharedTodo, 'id' | 'name' | 'detail' | 'dueDate' | 'progressStatus' | 'recurrenceType'>
 
-export type CreateTodoRequest = Omit<SharedCreateTodoRequest, 'parentId'> &
+export type CreateTodoInput = Omit<SharedCreateTodoRequest, 'parentId'> &
   Readonly<{
     parentId?: SharedCreateTodoRequest['parentId']
   }>
-export type UpdateTodoRequest = SharedUpdateTodoRequest
 
 export type TodoStatusFilter = 'all' | TodoProgressStatus
 export type TodoDueDateFilter = SharedTodoDueDateFilter
