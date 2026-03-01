@@ -69,6 +69,17 @@ npm install
 
 必要に応じて環境変数を設定します（`backend/.env.example`）。
 
+### データベースセットアップ（backend）
+
+backend の開発サーバー起動前に、Prisma スキーマを DB に反映する。
+
+```bash
+cd backend
+DATABASE_URL="${DATABASE_URL:-file:./todo.db}" npm run prisma:db:push
+```
+
+`DATABASE_URL` が未設定の場合は `file:./todo.db` を使用する。
+
 ## 開発サーバー起動
 
 バックエンド:
