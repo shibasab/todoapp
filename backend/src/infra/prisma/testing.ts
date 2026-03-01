@@ -60,8 +60,16 @@ const runPrismaDbPush = (
     timeout: 30_000,
   });
 
+const hasErrorCode = (value: unknown): value is Readonly<{ code: string }> => {
+  if (value == null || typeof value !== "object") {
+    return false;
+  }
+
+  return "code" in value && typeof value.code === "string";
+};
+
 const isExecutableNotFound = (result: SpawnSyncReturns<string>): boolean =>
-  (result.error as NodeJS.ErrnoException | undefined)?.code === "ENOENT";
+  hasErrorCode(result.error) && result.error.code === "ENOENT";
 
 const SQLITE_FILE_URL_PREFIX = "file:";
 
