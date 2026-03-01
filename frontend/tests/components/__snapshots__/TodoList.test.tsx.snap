@@ -135,7 +135,25 @@ exports[`TodoList > 表示モードでトグル・削除が動作し、編集保
     "textContent": "Delete",
     "type": "submit",
   },
+  {
+    "ariaLabel": "サブタスク名-1",
+    "disabled": false,
+    "kind": "input",
+    "name": "",
+    "placeholder": "サブタスク名を入力",
+    "readOnly": false,
+    "required": false,
+    "type": "text",
+    "value": "",
+  },
+  {
+    "ariaLabel": "サブタスク追加-1",
+    "disabled": false,
+    "kind": "button",
+    "textContent": "追加",
+    "type": "button",
+  },
 ]
 `;
 
-exports[`TodoList > 表示モードでトグル・削除が動作し、編集保存成功で表示モードへ戻る > text 1`] = `"Todo List 実装する 期限: 2026-02-01 進捗: 着手前 繰り返し: 毎日 Edit Delete 詳細あり"`;
+exports[`TodoList > 表示モードでトグル・削除が動作し、編集保存成功で表示モードへ戻る > text 1`] = `"Todo List 実装する 期限: 2026-02-01 進捗: 着手前 サブタスク進捗: 0 / 0 ( 0 %) 繰り返し: 毎日 Edit Delete 詳細あり サブタスク 追加 サブタスクはありません"`;
