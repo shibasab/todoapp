@@ -24,6 +24,7 @@ export const toTodoListItem = (
     progressStatus: todo.progressStatus,
     recurrenceType: todo.recurrenceType,
     parentId: todo.parentId,
+    parentTitle: todo.parentTitle,
     completedSubtaskCount: stats.completedSubtaskCount,
     totalSubtaskCount: stats.totalSubtaskCount,
     subtaskProgressPercent,

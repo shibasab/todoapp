@@ -12,6 +12,7 @@ export type TodoQuery = Readonly<{
   progressStatus?: TodoProgressStatus;
   keyword?: string;
   dueDateFilter?: TodoDueDateFilter;
+  parentId?: number;
 }>;
 
 export type CreateTodoRecordInput = Readonly<{

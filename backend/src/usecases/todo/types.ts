@@ -12,6 +12,7 @@ export type ListTodosInput = Readonly<{
   keyword?: string;
   progressStatus?: TodoProgressStatus;
   dueDateFilter?: TodoDueDateFilter;
+  parentId?: number;
 }>;
 
 export type GetTodoInput = Readonly<{

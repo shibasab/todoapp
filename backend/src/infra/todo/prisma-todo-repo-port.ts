@@ -19,7 +19,15 @@ const toTodoItem = (todo: Todo): TodoItem => ({
   progressStatus: toTodoProgressStatus(todo.progressStatus),
   recurrenceType: toTodoRecurrenceType(todo.recurrenceType),
   parentId: todo.parentId,
+  parentTitle: null,
   previousTodoId: todo.previousTodoId,
+});
+
+type TodoWithParentRelation = Todo & Readonly<{ parent: Readonly<{ name: string }> | null }>;
+
+const toTodoItemWithParent = (todo: TodoWithParentRelation): TodoItem => ({
+  ...toTodoItem(todo),
+  parentTitle: todo.parent?.name ?? null,
 });
 
 const toDueDateFilterWhere = (
@@ -96,13 +104,21 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         ownerId: query.ownerId,
         ...(query.progressStatus == null ? {} : { progressStatus: query.progressStatus }),
         ...toDueDateFilterWhere(query.dueDateFilter, query.now),
+        ...(query.parentId === undefined ? {} : { parentId: query.parentId }),
+      },
+      include: {
+        parent: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return todos.map(toTodoItem);
+    return todos.map(toTodoItemWithParent);
   },
   findByIdForOwner: async (id, ownerId) => {
     const todo = await client.todo.findFirst({
@@ -110,14 +126,21 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         id,
         ownerId,
       },
+      include: {
+        parent: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    return todo == null ? null : toTodoItem(todo);
+    return todo == null ? null : toTodoItemWithParent(todo);
   },
   create: async (input) => {
     try {
       return ok(
-        toTodoItem(
+        toTodoItemWithParent(
           await client.todo.create({
             data: {
               ownerId: input.ownerId,
@@ -129,6 +152,13 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
               parentId: input.parentId,
               activeName: input.activeName,
               ...(input.previousTodoId == null ? {} : { previousTodoId: input.previousTodoId }),
+            },
+            include: {
+              parent: {
+                select: {
+                  name: true,
+                },
+              },
             },
           }),
         ),
@@ -154,7 +184,7 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
   update: async (input) => {
     try {
       return ok(
-        toTodoItem(
+        toTodoItemWithParent(
           await client.todo.update({
             where: {
               id: input.id,
@@ -170,6 +200,13 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
                 ? {}
                 : { recurrenceType: input.recurrenceType }),
               ...(input.activeName === undefined ? {} : { activeName: input.activeName }),
+            },
+            include: {
+              parent: {
+                select: {
+                  name: true,
+                },
+              },
             },
           }),
         ),
@@ -228,9 +265,16 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
           not: "completed",
         },
       },
+      include: {
+        parent: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    return todo == null ? null : toTodoItem(todo);
+    return todo == null ? null : toTodoItemWithParent(todo);
   },
   findDuplicateActiveName: async (ownerId, name, excludeId) => {
     const duplicated = await client.todo.findFirst({
@@ -248,9 +292,16 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
               },
             }),
       },
+      include: {
+        parent: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    return duplicated == null ? null : toTodoItem(duplicated);
+    return duplicated == null ? null : toTodoItemWithParent(duplicated);
   },
   runInTransaction: async (callback) => {
     if (client.$transaction == null) {

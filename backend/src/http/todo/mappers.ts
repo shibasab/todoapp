@@ -29,6 +29,7 @@ export const toTodoDto = (todo: TodoResponseSource): Todo => ({
   progressStatus: todo.progressStatus,
   recurrenceType: todo.recurrenceType,
   parentId: todo.parentId,
+  parentTitle: todo.parentTitle,
   completedSubtaskCount: todo.completedSubtaskCount,
   totalSubtaskCount: todo.totalSubtaskCount,
   subtaskProgressPercent: todo.subtaskProgressPercent,

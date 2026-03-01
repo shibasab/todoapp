@@ -31,6 +31,7 @@ export const TodoSchema = z
     progressStatus: z.enum(todoProgressStatuses),
     recurrenceType: z.enum(todoRecurrenceTypes),
     parentId: z.number().int().positive().nullable(),
+    parentTitle: z.string().nullable(),
     completedSubtaskCount: z.number().int().nonnegative(),
     totalSubtaskCount: z.number().int().nonnegative(),
     subtaskProgressPercent: z.number().int().min(0).max(100),
@@ -56,7 +57,6 @@ export const UpdateTodoRequestSchema = z
     progressStatus: z.enum(todoProgressStatuses).optional(),
     recurrenceType: z.enum(todoRecurrenceTypes).optional(),
   })
-  .strict()
   .readonly();
 
 export const ListTodoQuerySchema = z
@@ -64,6 +64,7 @@ export const ListTodoQuerySchema = z
     keyword: z.string().optional(),
     progressStatus: z.enum(todoProgressStatuses).optional(),
     dueDate: z.enum(todoDueDateFilters).optional(),
+    parentId: z.coerce.number().int().positive().optional(),
   })
   .strict()
   .readonly();
