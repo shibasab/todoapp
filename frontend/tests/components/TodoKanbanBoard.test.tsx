@@ -6,6 +6,11 @@ import type { Todo } from '../../src/models/todo'
 import { TodoKanbanBoard } from '../../src/components/todo/TodoKanbanBoard'
 import { summarizeText } from '../helpers/domSnapshot'
 
+const createDragDataTransfer = (): Pick<DataTransfer, 'setData' | 'effectAllowed'> => ({
+  setData: vi.fn(),
+  effectAllowed: 'move',
+})
+
 const todos: readonly Todo[] = [
   {
     id: 1,
@@ -54,7 +59,7 @@ describe('TodoKanbanBoard', () => {
 
     const card = screen.getByTestId('kanban-card-1')
     const targetColumn = screen.getByTestId('kanban-column-in_progress')
-    const dataTransfer = { setData: vi.fn(), effectAllowed: 'move' } as unknown as DataTransfer
+    const dataTransfer = createDragDataTransfer()
 
     fireEvent.dragStart(card, { dataTransfer })
     fireEvent.drop(targetColumn)
@@ -70,7 +75,7 @@ describe('TodoKanbanBoard', () => {
 
     const card = screen.getByTestId('kanban-card-1')
     const sameColumn = screen.getByTestId('kanban-column-not_started')
-    const dataTransfer = { setData: vi.fn(), effectAllowed: 'move' } as unknown as DataTransfer
+    const dataTransfer = createDragDataTransfer()
 
     fireEvent.dragStart(card, { dataTransfer })
     fireEvent.dragOver(sameColumn)

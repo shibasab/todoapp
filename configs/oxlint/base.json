@@ -15,7 +15,8 @@
     "typescript/no-extraneous-class": "deny",
     "typescript/only-throw-error": "deny",
     "typescript/no-floating-promises": "deny",
-    "typescript/switch-exhaustiveness-check": "deny"
+    "typescript/switch-exhaustiveness-check": "deny",
+    "typescript/no-unsafe-type-assertion": "deny"
   },
   "env": {
     "es2024": true

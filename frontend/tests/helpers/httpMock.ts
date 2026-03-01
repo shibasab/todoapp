@@ -39,6 +39,20 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return Object.getPrototypeOf(value) === Object.prototype
 }
 
+const isHttpMethod = (value: unknown): value is HttpMethod =>
+  value === 'GET' || value === 'POST' || value === 'PUT' || value === 'DELETE'
+
+const isFixtureRoute = (value: unknown): value is FixtureRoute => {
+  if (!isPlainObject(value)) {
+    return false
+  }
+
+  return isHttpMethod(value.method) && typeof value.url === 'string'
+}
+
+const isFixtureScenario = (value: unknown): value is FixtureScenario =>
+  isPlainObject(value) && Array.isArray(value.routes) && value.routes.every(isFixtureRoute)
+
 const toSortedValue = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map((item) => toSortedValue(item))
@@ -131,7 +145,12 @@ const resolveScenarioRoutes = (scenarioFixture?: string): readonly FixtureRoute[
   if (!scenarioFixture) {
     return []
   }
-  const scenario = loadFixture<FixtureScenario>(scenarioFixture)
+
+  const scenario = loadFixture(scenarioFixture)
+  if (!isFixtureScenario(scenario)) {
+    throw new Error(`Invalid fixture scenario format: ${scenarioFixture}`)
+  }
+
   return scenario.routes
 }
 

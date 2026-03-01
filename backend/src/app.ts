@@ -18,8 +18,18 @@ export type AppDependencies = Readonly<{
 }>;
 
 const readRuntimeEnv = (): RuntimeEnv => {
-  const bunEnv = (globalThis as { Bun?: { env: RuntimeEnv } }).Bun?.env;
-  return bunEnv ?? process.env;
+  const runtime = globalThis;
+  if ("Bun" in runtime) {
+    const maybeBun = runtime.Bun;
+    if (maybeBun && typeof maybeBun === "object" && "env" in maybeBun) {
+      const env = maybeBun.env;
+      if (env && typeof env === "object") {
+        return env;
+      }
+    }
+  }
+
+  return process.env;
 };
 
 const readJwtAccessTokenExpireMinutes = (rawValue: string | undefined): number => {
