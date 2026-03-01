@@ -2,11 +2,6 @@ import type { CreateTodoRequest, Todo as ApiTodo, UpdateTodoRequest } from '@tod
 
 import type { CreateTodoInput, Todo } from '../models/todo'
 
-type ApiTodoWithParentTitle = Readonly<ApiTodo> &
-  Readonly<{
-    parentTitle?: string | null
-  }>
-
 export const toCreateTodoRequest = (input: CreateTodoInput): CreateTodoRequest => ({
   ...input,
   parentId: input.parentId ?? null,
@@ -20,7 +15,7 @@ export const toUpdateTodoRequest = (todo: Todo): UpdateTodoRequest => ({
   recurrenceType: todo.recurrenceType,
 })
 
-export const toTodoViewModels = (todos: readonly ApiTodoWithParentTitle[]): readonly Todo[] => {
+export const toTodoViewModels = (todos: readonly ApiTodo[]): readonly Todo[] => {
   const todoNameById = new Map(todos.map((todo) => [todo.id, todo.name] as const))
 
   return todos.map((todo) => ({

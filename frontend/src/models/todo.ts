@@ -13,7 +13,7 @@ import type {
 export type Todo = Pick<SharedTodo, 'id' | 'name' | 'detail' | 'dueDate' | 'progressStatus' | 'recurrenceType'> &
   Readonly<{
     parentId?: SharedTodo['parentId']
-    parentTitle?: string | null
+    parentTitle?: SharedTodo['parentTitle']
     completedSubtaskCount?: SharedTodo['completedSubtaskCount']
     totalSubtaskCount?: SharedTodo['totalSubtaskCount']
     subtaskProgressPercent?: SharedTodo['subtaskProgressPercent']
