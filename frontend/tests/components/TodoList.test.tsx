@@ -148,4 +148,29 @@ describe('TodoList', () => {
     expect(summarizeText(container)).toMatchSnapshot('text')
     expect(summarizeFormControls(container)).toMatchSnapshot('form')
   })
+
+  it('完了切り替え時にglobalエラーを表示する', async () => {
+    const onToggleCompletion = vi.fn(
+      async (): Promise<readonly ValidationError[]> => [
+        { field: 'global', reason: '未完了のサブタスクがあるため完了できません' },
+      ],
+    )
+
+    render(
+      <TodoList
+        todos={[TODO_ITEM]}
+        hasSearchCriteria={false}
+        onDelete={vi.fn()}
+        onEdit={vi.fn(async () => undefined)}
+        onToggleCompletion={onToggleCompletion}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('checkbox'))
+
+    await waitFor(() => {
+      expect(onToggleCompletion).toHaveBeenCalledWith(TODO_ITEM)
+      expect(screen.getByText('未完了のサブタスクがあるため完了できません')).toBeInTheDocument()
+    })
+  })
 })

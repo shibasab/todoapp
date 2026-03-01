@@ -1,4 +1,5 @@
 import { todoPath } from '@todoapp/shared'
+import { isAxiosError } from 'axios'
 import { useCallback, useRef, useState } from 'react'
 
 import type { CreateTodoInput, Todo, TodoRecurrenceType } from '../models/todo'
@@ -84,7 +85,7 @@ type TodoService = Readonly<{
   fetchTodos: (criteria?: TodoSearchState) => Promise<void>
   addTodo: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
   updateTodo: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
-  toggleTodoCompletion: (todo: Todo) => Promise<void>
+  toggleTodoCompletion: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   removeTodo: (id: number) => Promise<void>
   validateTodo: (
     name: string,
@@ -172,15 +173,27 @@ export const useTodo = (): TodoService => {
   )
 
   const toggleTodoCompletion = useCallback(
-    async (todo: Todo) => {
-      // 現在の状態を反転させて更新
-      const validationErrors = await updateTodo({
-        ...todo,
-        progressStatus: todo.progressStatus === 'completed' ? 'not_started' : 'completed',
-      })
-      if (validationErrors) {
-        // TODO: エラー対応（toast表示など）を行う
+    async (todo: Todo): Promise<readonly ValidationError[] | undefined> => {
+      try {
+        // 現在の状態を反転させて更新
+        const validationErrors = await updateTodo({
+          ...todo,
+          progressStatus: todo.progressStatus === 'completed' ? 'not_started' : 'completed',
+        })
+        if (validationErrors) {
+          return validationErrors
+        }
         return
+      } catch (error) {
+        if (isAxiosError<{ detail?: string }>(error) && error.response?.status === 409) {
+          return [
+            {
+              field: 'global',
+              reason: error.response.data?.detail ?? '未完了のサブタスクがあるため完了できません',
+            },
+          ]
+        }
+        throw error
       }
     },
     [updateTodo],
