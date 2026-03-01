@@ -14,7 +14,7 @@ type TodoListProps = Readonly<{
   hasSearchCriteria: boolean
   onDelete: (id: number) => void
   onEdit: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
-  onToggleCompletion: (todo: Todo) => Promise<void>
+  onToggleCompletion: (todo: Todo) => Promise<string | undefined>
   onCreateTodo?: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
@@ -39,6 +39,7 @@ export const TodoList = ({
   const [createTodoErrorsByParentId, setCreateTodoErrorsByParentId] = useState<
     Readonly<Record<number, readonly ValidationError[]>>
   >({})
+  const [toggleErrors, setToggleErrors] = useState<Readonly<Record<number, string | null>>>({})
   const emptyMessage = hasSearchCriteria ? '条件に一致するタスクがありません' : 'タスクはありません'
   const recurrenceTypeLabel: Record<Todo['recurrenceType'], string> = {
     none: 'なし',
@@ -141,6 +142,18 @@ export const TodoList = ({
       setCreateTodoErrorsByParentId((prev) => ({ ...prev, [parentId]: [] }))
     },
     [childTodoNames, onCreateTodo],
+  )
+
+  const handleToggleCompletion = useCallback(
+    async (todo: Todo) => {
+      const message = await onToggleCompletion(todo)
+      if (message == null) {
+        setToggleErrors((prev) => ({ ...prev, [todo.id]: null }))
+        return
+      }
+      setToggleErrors((prev) => ({ ...prev, [todo.id]: message }))
+    },
+    [onToggleCompletion],
   )
 
   return (
@@ -255,7 +268,9 @@ export const TodoList = ({
                     <input
                       type="checkbox"
                       checked={isCompleted}
-                      onChange={() => onToggleCompletion(todo)}
+                      onChange={() => {
+                        void handleToggleCompletion(todo)
+                      }}
                       className="mt-1.5 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 cursor-pointer"
                     />
                     <div className="min-w-0">
@@ -352,6 +367,7 @@ export const TodoList = ({
                     )}
                   </div>
                 ) : null}
+                {toggleErrors[todo.id] ? <p className="mt-2 text-sm text-red-600">{toggleErrors[todo.id]}</p> : null}
               </div>
             )
           })
