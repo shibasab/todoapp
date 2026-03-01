@@ -6,6 +6,7 @@ import type { TodoSearchParams, TodoSearchState } from './todoSearch'
 
 import { useApiClient } from '../contexts/ApiContext'
 import { toValidationErrors, type ValidationError } from '../models/error'
+import { toCreateTodoRequest, toTodoViewModels, toUpdateTodoRequest } from '../services/todoApi'
 import { validateRequired, validateMaxLength } from '../services/validation'
 
 // バリデーション制約値（バックエンドと同期）
@@ -128,7 +129,7 @@ export const useTodo = (): TodoService => {
           mode: 'latestOnly',
         },
       })
-      setTodos(data)
+      setTodos(toTodoViewModels(data))
     },
     [apiClient],
   )
@@ -142,10 +143,7 @@ export const useTodo = (): TodoService => {
       }
 
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
-      const result = await apiClient.post('/todo/', {
-        ...data,
-        parentId: data.parentId ?? null,
-      })
+      const result = await apiClient.post('/todo/', toCreateTodoRequest(data))
       if (!result.ok) {
         return toValidationErrors(result.error.errors)
       }
@@ -162,11 +160,9 @@ export const useTodo = (): TodoService => {
         return clientErrors
       }
 
-      const { id, ...body } = todo
+      const { id } = todo
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
-      const result = await apiClient.put(todoPath(id), {
-        ...body,
-      })
+      const result = await apiClient.put(todoPath(id), toUpdateTodoRequest(todo))
       if (!result.ok) {
         return toValidationErrors(result.error.errors)
       }
