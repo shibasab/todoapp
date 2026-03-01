@@ -1,7 +1,7 @@
 import { Fragment, useState, useCallback, type ChangeEvent } from 'react'
 
 import type { ValidationError } from '../../models/error'
-import type { Todo } from '../../models/todo'
+import type { CreateTodoInput, Todo } from '../../models/todo'
 
 import { TODO_NAME_MAX_LENGTH, TODO_DETAIL_MAX_LENGTH, useTodoFieldValidation } from '../../hooks/useTodo'
 import { mergeValidationErrors } from '../../services/validation'
@@ -15,6 +15,7 @@ type TodoListProps = Readonly<{
   onDelete: (id: number) => void
   onEdit: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   onToggleCompletion: (todo: Todo) => Promise<void>
+  onAddSubtask?: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
 type EditState =
@@ -25,8 +26,17 @@ type EditState =
       }>)
   | null
 
-export const TodoList = ({ todos, hasSearchCriteria, onDelete, onEdit, onToggleCompletion }: TodoListProps) => {
+export const TodoList = ({
+  todos,
+  hasSearchCriteria,
+  onDelete,
+  onEdit,
+  onToggleCompletion,
+  onAddSubtask,
+}: TodoListProps) => {
   const [editState, setEditState] = useState<EditState>(null)
+  const [subtaskNames, setSubtaskNames] = useState<Readonly<Record<number, string>>>({})
+  const [subtaskErrors, setSubtaskErrors] = useState<Readonly<Record<number, string | null>>>({})
   const emptyMessage = hasSearchCriteria ? '条件に一致するタスクがありません' : 'タスクはありません'
   const recurrenceTypeLabel: Record<Todo['recurrenceType'], string> = {
     none: 'なし',
@@ -101,6 +111,42 @@ export const TodoList = ({ todos, hasSearchCriteria, onDelete, onEdit, onToggleC
     setEditState(null)
   }
 
+  const handleSubtaskNameChange = useCallback((parentId: number, value: string) => {
+    setSubtaskNames((prev) => ({ ...prev, [parentId]: value }))
+  }, [])
+
+  const handleAddSubtask = useCallback(
+    async (parentId: number) => {
+      if (onAddSubtask == null) {
+        return
+      }
+
+      const name = (subtaskNames[parentId] ?? '').trim()
+      if (name === '') {
+        setSubtaskErrors((prev) => ({ ...prev, [parentId]: 'サブタスク名を入力してください' }))
+        return
+      }
+
+      const validationErrors = await onAddSubtask({
+        name,
+        detail: '',
+        dueDate: null,
+        progressStatus: 'not_started',
+        recurrenceType: 'none',
+        parentId,
+      })
+
+      if (validationErrors != null && validationErrors.length > 0) {
+        setSubtaskErrors((prev) => ({ ...prev, [parentId]: 'サブタスクを追加できませんでした' }))
+        return
+      }
+
+      setSubtaskNames((prev) => ({ ...prev, [parentId]: '' }))
+      setSubtaskErrors((prev) => ({ ...prev, [parentId]: null }))
+    },
+    [onAddSubtask, subtaskNames],
+  )
+
   return (
     <Fragment>
       <br />
@@ -112,6 +158,11 @@ export const TodoList = ({ todos, hasSearchCriteria, onDelete, onEdit, onToggleC
           todos.map((todo) => {
             const isEditing = editState?.id === todo.id
             const isCompleted = todo.progressStatus === 'completed'
+            const isSubtask = todo.parentId != null
+            const subtasks = isSubtask ? [] : todos.filter((item) => item.parentId === todo.id)
+            const completedCount = todo.completedSubtaskCount ?? 0
+            const totalCount = todo.totalSubtaskCount ?? 0
+            const progressPercent = todo.subtaskProgressPercent ?? 0
 
             if (isEditing) {
               return (
@@ -223,6 +274,15 @@ export const TodoList = ({ todos, hasSearchCriteria, onDelete, onEdit, onToggleC
                       <p className={`text-sm mt-1 ${isCompleted ? 'text-gray-400' : 'text-indigo-700'}`}>
                         進捗: {progressStatusLabel[todo.progressStatus]}
                       </p>
+                      {!isSubtask ? (
+                        <p className={`text-sm mt-1 ${isCompleted ? 'text-gray-400' : 'text-emerald-700'}`}>
+                          サブタスク進捗: {completedCount}/{totalCount} ({progressPercent}%)
+                        </p>
+                      ) : (
+                        <p className={`text-sm mt-1 ${isCompleted ? 'text-gray-400' : 'text-emerald-700'}`}>
+                          親タスク: {todo.parentTitle ?? '不明'}
+                        </p>
+                      )}
                       {todo.recurrenceType !== 'none' ? (
                         <p className={`text-sm mt-1 ${isCompleted ? 'text-gray-400' : 'text-cyan-700'}`}>
                           繰り返し: {recurrenceTypeLabel[todo.recurrenceType]}
@@ -256,6 +316,43 @@ export const TodoList = ({ todos, hasSearchCriteria, onDelete, onEdit, onToggleC
                     </p>
                   </div>
                 )}
+                {!isSubtask ? (
+                  <div className="mt-3 border-t border-gray-100 pt-3">
+                    <h6 className="text-sm font-semibold text-gray-700">サブタスク</h6>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={subtaskNames[todo.id] ?? ''}
+                        onChange={(event) => handleSubtaskNameChange(todo.id, event.target.value)}
+                        aria-label={`サブタスク名-${todo.id}`}
+                        placeholder="サブタスク名を入力"
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleAddSubtask(todo.id)
+                        }}
+                        aria-label={`サブタスク追加-${todo.id}`}
+                        className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
+                      >
+                        追加
+                      </button>
+                    </div>
+                    {subtaskErrors[todo.id] ? (
+                      <p className="mt-1 text-sm text-red-600">{subtaskErrors[todo.id]}</p>
+                    ) : null}
+                    {subtasks.length === 0 ? (
+                      <p className="mt-2 text-sm text-gray-500">サブタスクはありません</p>
+                    ) : (
+                      <ul className="mt-2 list-disc pl-5 text-sm text-gray-700">
+                        {subtasks.map((subtask) => (
+                          <li key={subtask.id}>{subtask.name}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
               </div>
             )
           })
