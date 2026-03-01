@@ -25,9 +25,11 @@ export {
 } from "./contracts/auth";
 export { HealthResponseSchema, type HealthResponse } from "./contracts/health";
 export {
+  ConflictErrorResponseSchema,
   DetailErrorResponseSchema,
   ValidationErrorResponseSchema,
   ValidationIssueSchema,
+  type ConflictErrorResponse,
   type DetailErrorResponse,
   type ValidationErrorResponse,
   type ValidationIssue,

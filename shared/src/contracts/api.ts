@@ -1,5 +1,9 @@
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./auth";
-import type { DetailErrorResponse, ValidationErrorResponse } from "./response";
+import type {
+  ConflictErrorResponse,
+  DetailErrorResponse,
+  ValidationErrorResponse,
+} from "./response";
 import type { CreateTodoRequest, ListTodoQuery, Todo, UpdateTodoRequest } from "./todo";
 
 export type TodoPath = `/todo/${number}/`;
@@ -12,6 +16,8 @@ type TodoPathContracts<TContract extends object> = {
   [path in TodoPath]: TContract;
 };
 
+type MutationErrorResponse = ValidationErrorResponse | ConflictErrorResponse;
+
 export type ApiContracts = {
   get: {
     "/todo/": { query: ListTodoQuery; response: readonly Todo[] };
@@ -21,24 +27,24 @@ export type ApiContracts = {
     "/todo/": {
       request: CreateTodoRequest;
       response: Todo;
-      error: ValidationErrorResponse;
+      error: MutationErrorResponse;
     };
     "/auth/login": {
       request: LoginRequest;
       response: AuthResponse;
-      error: ValidationErrorResponse;
+      error: MutationErrorResponse;
     };
     "/auth/register": {
       request: RegisterRequest;
       response: AuthResponse;
-      error: ValidationErrorResponse;
+      error: MutationErrorResponse;
     };
     "/auth/logout": { response: DetailErrorResponse };
   };
   put: TodoPathContracts<{
     request: UpdateTodoRequest;
     response: Todo;
-    error: ValidationErrorResponse;
+    error: MutationErrorResponse;
   }>;
   delete: TodoPathContracts<{ response: void }>;
 };
