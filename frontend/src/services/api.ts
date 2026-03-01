@@ -1,4 +1,5 @@
 import type {
+  ApiEndpoint,
   ApiError,
   ApiQuery,
   ApiRequest,
@@ -131,6 +132,18 @@ export const createApiClient = (
     }
   }
 
+  const toHandledApiError = <M extends 'post' | 'put', E extends ApiEndpoint<M>>(
+    error: unknown,
+  ): ApiError<M, E> | null => {
+    if (!isAxiosError<ApiError<M, E>>(error) || error.response == null) {
+      return null
+    }
+    if (error.response.status !== 409 && error.response.status !== 422) {
+      return null
+    }
+    return error.response.data
+  }
+
   return {
     get: async <E extends GetEndpoint>(url: E, params?: ApiGetParamsInput<E>): Promise<ApiResponse<'get', E>> =>
       withTracking(async () => {
@@ -174,8 +187,9 @@ export const createApiClient = (
           const response = await axiosInstance.post<ApiResponse<'post', E>>(url, data)
           return ok(response.data)
         } catch (error) {
-          if (isAxiosError<ApiError<'post', E>>(error) && error.response?.status === 422) {
-            return err(error.response.data)
+          const handledError = toHandledApiError<'post', E>(error)
+          if (handledError != null) {
+            return err(handledError)
           }
           throw error
         }
@@ -191,8 +205,9 @@ export const createApiClient = (
           const response = await axiosInstance.put<ApiResponse<'put', E>>(url, data)
           return ok(response.data)
         } catch (error) {
-          if (isAxiosError<ApiError<'put', E>>(error) && error.response?.status === 422) {
-            return err(error.response.data)
+          const handledError = toHandledApiError<'put', E>(error)
+          if (handledError != null) {
+            return err(handledError)
           }
           throw error
         }

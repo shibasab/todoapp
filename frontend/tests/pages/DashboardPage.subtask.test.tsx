@@ -263,6 +263,8 @@ describe('DashboardPage subtask', () => {
           url: '/todo/20/',
           status: 409,
           response: {
+            status: 409,
+            type: 'conflict_error',
             detail: '未完了のサブタスクがあるため完了できません',
           },
         },

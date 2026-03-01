@@ -1,5 +1,6 @@
+import type { ApiError } from '@todoapp/shared'
+
 import { todoPath } from '@todoapp/shared'
-import { isAxiosError } from 'axios'
 import { useCallback, useRef, useState } from 'react'
 
 import type { CreateTodoInput, Todo, TodoRecurrenceType } from '../models/todo'
@@ -95,6 +96,15 @@ type TodoService = Readonly<{
   ) => readonly ValidationError[]
 }>
 
+type TodoMutationApiError = ApiError<'post', '/todo/'>
+
+const toTodoMutationErrors = (error: TodoMutationApiError): readonly ValidationError[] => {
+  if (error.status === 409) {
+    return [{ field: 'global', reason: error.detail }]
+  }
+  return toValidationErrors(error.errors)
+}
+
 const buildTodoSearchParams = (criteria?: TodoSearchState): TodoSearchParams | undefined => {
   if (!criteria) {
     return undefined
@@ -146,7 +156,7 @@ export const useTodo = (): TodoService => {
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
       const result = await apiClient.post('/todo/', toCreateTodoRequest(data))
       if (!result.ok) {
-        return toValidationErrors(result.error.errors)
+        return toTodoMutationErrors(result.error)
       }
       await fetchTodos(lastSearchRef.current)
     },
@@ -165,7 +175,7 @@ export const useTodo = (): TodoService => {
       // API 呼び出し（unique_violation 等はサーバーでのみ検出）
       const result = await apiClient.put(todoPath(id), toUpdateTodoRequest(todo))
       if (!result.ok) {
-        return toValidationErrors(result.error.errors)
+        return toTodoMutationErrors(result.error)
       }
       await fetchTodos(lastSearchRef.current)
     },
@@ -174,27 +184,11 @@ export const useTodo = (): TodoService => {
 
   const toggleTodoCompletion = useCallback(
     async (todo: Todo): Promise<readonly ValidationError[] | undefined> => {
-      try {
-        // 現在の状態を反転させて更新
-        const validationErrors = await updateTodo({
-          ...todo,
-          progressStatus: todo.progressStatus === 'completed' ? 'not_started' : 'completed',
-        })
-        if (validationErrors) {
-          return validationErrors
-        }
-        return
-      } catch (error) {
-        if (isAxiosError<{ detail?: string }>(error) && error.response?.status === 409) {
-          return [
-            {
-              field: 'global',
-              reason: error.response.data?.detail ?? '未完了のサブタスクがあるため完了できません',
-            },
-          ]
-        }
-        throw error
-      }
+      // 現在の状態を反転させて更新
+      return updateTodo({
+        ...todo,
+        progressStatus: todo.progressStatus === 'completed' ? 'not_started' : 'completed',
+      })
     },
     [updateTodo],
   )
