@@ -1,4 +1,5 @@
 import type {
+  ConflictErrorResponse,
   DetailErrorResponse,
   ValidationErrorResponse,
   ValidationIssue,
@@ -12,7 +13,11 @@ export type HttpError =
       body: ValidationErrorResponse;
     }>
   | Readonly<{
-      status: 401 | 404 | 409 | 500;
+      status: 409;
+      body: ConflictErrorResponse;
+    }>
+  | Readonly<{
+      status: 401 | 404 | 500;
       body: DetailErrorResponse;
     }>;
 
@@ -51,6 +56,8 @@ export const toTodoHttpError = (errorValue: TodoUseCaseError): HttpError => {
       return {
         status: 409,
         body: {
+          status: 409,
+          type: "conflict_error",
           detail: errorValue.detail,
         },
       };

@@ -1,4 +1,10 @@
-import type { DetailErrorResponse, Todo, ValidationErrorResponse } from '@todoapp/shared'
+import type {
+  AuthResponse,
+  ConflictErrorResponse,
+  DetailErrorResponse,
+  Todo,
+  ValidationErrorResponse,
+} from '@todoapp/shared'
 
 import { todoPath } from '@todoapp/shared'
 import axios from 'axios'
@@ -45,7 +51,9 @@ describe('ApiClient typing', () => {
       dueDate: undefined,
     })
 
-    type _assertPut = AssertTrue<IsAssignable<typeof resultPromise, Promise<Result<Todo, ValidationErrorResponse>>>>
+    type _assertPut = AssertTrue<
+      IsAssignable<typeof resultPromise, Promise<Result<Todo, ValidationErrorResponse | ConflictErrorResponse>>>
+    >
 
     const result = await resultPromise
     expect(result.ok).toBe(true)
@@ -76,6 +84,38 @@ describe('ApiClient typing', () => {
 
     const assertLogout: _assertLogout = true
     void assertLogout
+    mock.restore()
+  })
+
+  it('POST /auth/register のエラー契約に409 conflictが含まれる', async () => {
+    const axiosInstance = axios.create()
+    const mock = new AxiosMockAdapter(axiosInstance)
+    mock.onPost('/auth/register').reply(409, {
+      status: 409,
+      type: 'conflict_error',
+      detail: 'Username already registered',
+    })
+
+    const apiClient = createApiClient(axiosInstance, {
+      onRequestStart: noop,
+      onRequestEnd: noop,
+    })
+
+    const resultPromise = apiClient.post('/auth/register', {
+      username: 'taken',
+      email: 'taken@example.com',
+      password: 'password123',
+    })
+
+    type _assertRegister = AssertTrue<
+      IsAssignable<typeof resultPromise, Promise<Result<AuthResponse, ValidationErrorResponse | ConflictErrorResponse>>>
+    >
+
+    const result = await resultPromise
+    expect(result.ok).toBe(false)
+
+    const assertRegister: _assertRegister = true
+    void assertRegister
     mock.restore()
   })
 })
