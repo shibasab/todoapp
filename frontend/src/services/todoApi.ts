@@ -31,10 +31,7 @@ export const toTodoViewModels = (todos: readonly ApiTodoWithParentTitle[]): read
     progressStatus: todo.progressStatus,
     recurrenceType: todo.recurrenceType,
     parentId: todo.parentId,
-    parentTitle:
-      todo.parentId == null
-        ? null
-        : (todo.parentTitle ?? todoNameById.get(todo.parentId) ?? null),
+    parentTitle: todo.parentId == null ? null : (todo.parentTitle ?? todoNameById.get(todo.parentId) ?? null),
     completedSubtaskCount: todo.completedSubtaskCount,
     totalSubtaskCount: todo.totalSubtaskCount,
     subtaskProgressPercent: todo.subtaskProgressPercent,
