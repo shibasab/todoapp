@@ -10,7 +10,14 @@ import type {
   TodoRecurrenceType,
 } from '@todoapp/shared'
 
-export type Todo = Pick<SharedTodo, 'id' | 'name' | 'detail' | 'dueDate' | 'progressStatus' | 'recurrenceType'>
+export type Todo = Pick<SharedTodo, 'id' | 'name' | 'detail' | 'dueDate' | 'progressStatus' | 'recurrenceType'> &
+  Readonly<{
+    parentId?: SharedTodo['parentId']
+    parentTitle?: string | null
+    completedSubtaskCount?: SharedTodo['completedSubtaskCount']
+    totalSubtaskCount?: SharedTodo['totalSubtaskCount']
+    subtaskProgressPercent?: SharedTodo['subtaskProgressPercent']
+  }>
 
 export type CreateTodoInput = Omit<SharedCreateTodoRequest, 'parentId'> &
   Readonly<{
