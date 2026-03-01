@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { ValidationError } from '../../src/models/error'
-import type { Todo } from '../../src/models/todo'
+import type { CreateTodoInput, Todo } from '../../src/models/todo'
 
 import { TodoList } from '../../src/components/todo/TodoList'
 import { summarizeFormControls, summarizeText } from '../helpers/domSnapshot'
@@ -30,6 +30,49 @@ describe('TodoList', () => {
 
     expect(screen.getByText('タスクはありません')).toBeInTheDocument()
     expect(summarizeText(container)).toMatchSnapshot('text')
+  })
+
+  it('サブタスク追加時の入力バリデーションは onCreateTodo に委譲する', async () => {
+    const parentTodo: Todo = {
+      ...TODO_ITEM,
+      id: 10,
+      name: '親タスクA',
+      recurrenceType: 'none',
+      progressStatus: 'in_progress',
+      dueDate: null,
+      completedSubtaskCount: 0,
+      totalSubtaskCount: 0,
+      subtaskProgressPercent: 0,
+    }
+    const onCreateTodo = vi.fn(
+      async (_input: CreateTodoInput): Promise<readonly ValidationError[]> => [{ field: 'name', reason: 'required' }],
+    )
+
+    render(
+      <TodoList
+        todos={[parentTodo]}
+        hasSearchCriteria={false}
+        onDelete={vi.fn()}
+        onEdit={vi.fn(async () => undefined)}
+        onToggleCompletion={vi.fn(async () => undefined)}
+        onCreateTodo={onCreateTodo}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('サブタスク名-10'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByLabelText('サブタスク追加-10'))
+
+    await waitFor(() => {
+      expect(onCreateTodo).toHaveBeenCalledWith({
+        name: '',
+        detail: '',
+        dueDate: null,
+        progressStatus: 'not_started',
+        recurrenceType: 'none',
+        parentId: 10,
+      })
+      expect(screen.getByText('タスク名を入力してください')).toBeInTheDocument()
+    })
   })
 
   it('表示モードでトグル・削除が動作し、編集保存成功で表示モードへ戻る', async () => {

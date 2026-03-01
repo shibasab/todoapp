@@ -15,7 +15,7 @@ type TodoListProps = Readonly<{
   onDelete: (id: number) => void
   onEdit: (todo: Todo) => Promise<readonly ValidationError[] | undefined>
   onToggleCompletion: (todo: Todo) => Promise<void>
-  onAddSubtask?: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
+  onCreateTodo?: (todo: CreateTodoInput) => Promise<readonly ValidationError[] | undefined>
 }>
 
 type EditState =
@@ -32,11 +32,13 @@ export const TodoList = ({
   onDelete,
   onEdit,
   onToggleCompletion,
-  onAddSubtask,
+  onCreateTodo,
 }: TodoListProps) => {
   const [editState, setEditState] = useState<EditState>(null)
-  const [subtaskNames, setSubtaskNames] = useState<Readonly<Record<number, string>>>({})
-  const [subtaskErrors, setSubtaskErrors] = useState<Readonly<Record<number, string | null>>>({})
+  const [childTodoNames, setChildTodoNames] = useState<Readonly<Record<number, string>>>({})
+  const [createTodoErrorsByParentId, setCreateTodoErrorsByParentId] = useState<
+    Readonly<Record<number, readonly ValidationError[]>>
+  >({})
   const emptyMessage = hasSearchCriteria ? '条件に一致するタスクがありません' : 'タスクはありません'
   const recurrenceTypeLabel: Record<Todo['recurrenceType'], string> = {
     none: 'なし',
@@ -111,24 +113,18 @@ export const TodoList = ({
     setEditState(null)
   }
 
-  const handleSubtaskNameChange = useCallback((parentId: number, value: string) => {
-    setSubtaskNames((prev) => ({ ...prev, [parentId]: value }))
+  const handleChildTodoNameChange = useCallback((parentId: number, value: string) => {
+    setChildTodoNames((prev) => ({ ...prev, [parentId]: value }))
   }, [])
 
-  const handleAddSubtask = useCallback(
+  const handleCreateChildTodo = useCallback(
     async (parentId: number) => {
-      if (onAddSubtask == null) {
+      if (onCreateTodo == null) {
         return
       }
 
-      const name = (subtaskNames[parentId] ?? '').trim()
-      if (name === '') {
-        setSubtaskErrors((prev) => ({ ...prev, [parentId]: 'サブタスク名を入力してください' }))
-        return
-      }
-
-      const validationErrors = await onAddSubtask({
-        name,
+      const validationErrors = await onCreateTodo({
+        name: (childTodoNames[parentId] ?? '').trim(),
         detail: '',
         dueDate: null,
         progressStatus: 'not_started',
@@ -137,14 +133,14 @@ export const TodoList = ({
       })
 
       if (validationErrors != null && validationErrors.length > 0) {
-        setSubtaskErrors((prev) => ({ ...prev, [parentId]: 'サブタスクを追加できませんでした' }))
+        setCreateTodoErrorsByParentId((prev) => ({ ...prev, [parentId]: validationErrors }))
         return
       }
 
-      setSubtaskNames((prev) => ({ ...prev, [parentId]: '' }))
-      setSubtaskErrors((prev) => ({ ...prev, [parentId]: null }))
+      setChildTodoNames((prev) => ({ ...prev, [parentId]: '' }))
+      setCreateTodoErrorsByParentId((prev) => ({ ...prev, [parentId]: [] }))
     },
-    [onAddSubtask, subtaskNames],
+    [childTodoNames, onCreateTodo],
   )
 
   return (
@@ -163,6 +159,8 @@ export const TodoList = ({
             const completedCount = todo.completedSubtaskCount ?? 0
             const totalCount = todo.totalSubtaskCount ?? 0
             const progressPercent = todo.subtaskProgressPercent ?? 0
+            const createTodoErrors = createTodoErrorsByParentId[todo.id] ?? []
+            const hasNonNameCreateError = createTodoErrors.some((error) => error.field !== 'name')
 
             if (isEditing) {
               return (
@@ -322,8 +320,8 @@ export const TodoList = ({
                     <div className="mt-2 flex gap-2">
                       <input
                         type="text"
-                        value={subtaskNames[todo.id] ?? ''}
-                        onChange={(event) => handleSubtaskNameChange(todo.id, event.target.value)}
+                        value={childTodoNames[todo.id] ?? ''}
+                        onChange={(event) => handleChildTodoNameChange(todo.id, event.target.value)}
                         aria-label={`サブタスク名-${todo.id}`}
                         placeholder="サブタスク名を入力"
                         className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -331,7 +329,7 @@ export const TodoList = ({
                       <button
                         type="button"
                         onClick={() => {
-                          void handleAddSubtask(todo.id)
+                          void handleCreateChildTodo(todo.id)
                         }}
                         aria-label={`サブタスク追加-${todo.id}`}
                         className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
@@ -339,8 +337,9 @@ export const TodoList = ({
                         追加
                       </button>
                     </div>
-                    {subtaskErrors[todo.id] ? (
-                      <p className="mt-1 text-sm text-red-600">{subtaskErrors[todo.id]}</p>
+                    <FieldError errors={createTodoErrors} fieldName="name" fieldLabel="タスク名" />
+                    {hasNonNameCreateError ? (
+                      <p className="mt-1 text-sm text-red-600">タスクを追加できませんでした</p>
                     ) : null}
                     {subtasks.length === 0 ? (
                       <p className="mt-2 text-sm text-gray-500">サブタスクはありません</p>

@@ -106,7 +106,7 @@ export const DashboardPage = () => {
           onDelete={removeTodo}
           onEdit={updateTodo}
           onToggleCompletion={toggleTodoCompletion}
-          onAddSubtask={addTodo}
+          onCreateTodo={addTodo}
         />
       ) : (
         <TodoKanbanBoard todos={todos} hasSearchCriteria={searchHasCriteria} onMoveTodo={handleKanbanMove} />
