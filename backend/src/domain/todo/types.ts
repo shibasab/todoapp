@@ -29,6 +29,7 @@ export type TodoItem = Readonly<{
   progressStatus: TodoProgressStatus;
   recurrenceType: TodoRecurrenceType;
   parentId: number | null;
+  parentTitle: string | null;
   previousTodoId: number | null;
 }>;
 
@@ -41,6 +42,7 @@ export type TodoListItem = Readonly<{
   progressStatus: TodoProgressStatus;
   recurrenceType: TodoRecurrenceType;
   parentId: number | null;
+  parentTitle: string | null;
   completedSubtaskCount: number;
   totalSubtaskCount: number;
   subtaskProgressPercent: number;

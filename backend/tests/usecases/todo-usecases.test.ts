@@ -19,6 +19,7 @@ const baseTodo = (overrides: Partial<TodoItem> = {}): TodoItem => ({
   progressStatus: "not_started",
   recurrenceType: "none",
   parentId: null,
+  parentTitle: null,
   previousTodoId: null,
   ...overrides,
 });

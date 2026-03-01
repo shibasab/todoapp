@@ -24,6 +24,7 @@ export const createListTodosUseCase = (
           now: dependencies.clock.now(),
           ...(input.progressStatus === undefined ? {} : { progressStatus: input.progressStatus }),
           ...(input.dueDateFilter === undefined ? {} : { dueDateFilter: input.dueDateFilter }),
+          ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
         });
 
         const keyword = normalizeKeyword(input.keyword);

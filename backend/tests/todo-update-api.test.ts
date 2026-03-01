@@ -19,6 +19,7 @@ type TodoBody = Readonly<{
   progressStatus: "not_started" | "in_progress" | "completed";
   recurrenceType: "none" | "daily" | "weekly" | "monthly";
   parentId: number | null;
+  parentTitle: string | null;
 }>;
 
 type ValidationErrorBody = Readonly<{

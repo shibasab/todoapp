@@ -20,6 +20,7 @@ type TodoBody = Readonly<{
   progressStatus: "not_started" | "in_progress" | "completed";
   recurrenceType: "none" | "daily" | "weekly" | "monthly";
   parentId: number | null;
+  parentTitle: string | null;
   completedSubtaskCount: number;
   totalSubtaskCount: number;
   subtaskProgressPercent: number;
@@ -374,6 +375,7 @@ describe("todo read api", () => {
       const body = await readJson<TodoBody>(response);
 
       expect(response.status).toBe(200);
+      expect(body.parentTitle).toBeNull();
       expect(body.totalSubtaskCount).toBe(2);
       expect(body.completedSubtaskCount).toBe(1);
       expect(body.subtaskProgressPercent).toBe(50);
@@ -404,6 +406,71 @@ describe("todo read api", () => {
       expect(invalidIdBody.detail).toBe("Todo not found");
       expect(notFoundResponse.status).toBe(404);
       expect(notFoundBody.detail).toBe("Todo not found");
+    } finally {
+      await testApp.cleanup();
+    }
+  });
+
+  it("GET /api/todo/ は parentId クエリで子タスクを絞り込める", async () => {
+    const testApp = await setupTodoTestApp();
+
+    try {
+      const auth = await register(testApp.app, "parent-filter-user", "parent-filter@example.com");
+      const parentA = await testApp.prisma.todo.create({
+        data: {
+          ownerId: auth.user.id,
+          name: "parent-a",
+          detail: "",
+          progressStatus: "in_progress",
+          recurrenceType: "none",
+          activeName: "parent-a",
+        },
+      });
+      const parentB = await testApp.prisma.todo.create({
+        data: {
+          ownerId: auth.user.id,
+          name: "parent-b",
+          detail: "",
+          progressStatus: "in_progress",
+          recurrenceType: "none",
+          activeName: "parent-b",
+        },
+      });
+
+      await testApp.prisma.todo.createMany({
+        data: [
+          {
+            ownerId: auth.user.id,
+            name: "child-a",
+            detail: "",
+            progressStatus: "not_started",
+            recurrenceType: "none",
+            parentId: parentA.id,
+            activeName: "child-a",
+          },
+          {
+            ownerId: auth.user.id,
+            name: "child-b",
+            detail: "",
+            progressStatus: "not_started",
+            recurrenceType: "none",
+            parentId: parentB.id,
+            activeName: "child-b",
+          },
+        ],
+      });
+
+      const response = await testApp.app.request(`/api/todo/?parentId=${parentA.id}`, {
+        method: "GET",
+        headers: toAuthHeader(auth.token),
+      });
+      const body = await readJson<readonly TodoBody[]>(response);
+
+      expect(response.status).toBe(200);
+      expect(body).toHaveLength(1);
+      expect(body[0]?.name).toBe("child-a");
+      expect(body[0]?.parentId).toBe(parentA.id);
+      expect(body[0]?.parentTitle).toBe("parent-a");
     } finally {
       await testApp.cleanup();
     }

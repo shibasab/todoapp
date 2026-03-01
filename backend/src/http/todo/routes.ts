@@ -102,6 +102,7 @@ export const createTodoHttpRoutes = (dependencies: TodoHttpRouteDependencies): H
       ...(parsedQuery.data.dueDate === undefined
         ? {}
         : { dueDateFilter: parsedQuery.data.dueDate }),
+      ...(parsedQuery.data.parentId === undefined ? {} : { parentId: parsedQuery.data.parentId }),
     });
     if (!result.ok) {
       return respondError(context, result.error);
