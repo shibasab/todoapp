@@ -50,6 +50,8 @@ describe("todo http error mapper", () => {
     expect(conflict).toEqual({
       status: 409,
       body: {
+        status: 409,
+        type: "conflict_error",
         detail: "Conflict error",
       },
     });

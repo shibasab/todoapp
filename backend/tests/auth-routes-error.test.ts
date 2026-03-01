@@ -8,6 +8,8 @@ import type { AuthUseCases } from "../src/usecases/auth/types";
 
 type ErrorBody = Readonly<{
   detail: string;
+  status?: number;
+  type?: string;
 }>;
 
 const readJson = async <T>(response: Response): Promise<T> => (await response.json()) as T;
@@ -97,6 +99,8 @@ describe("auth routes internal error handling", () => {
 
     expect(response.status).toBe(409);
     expect(body).toEqual({
+      status: 409,
+      type: "conflict_error",
       detail: "Username already registered",
     });
   });
