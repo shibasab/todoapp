@@ -215,4 +215,70 @@ describe('DashboardPage subtask', () => {
       expect(within(container).getByText('親タスク: 親タスクA')).toBeInTheDocument()
     })
   })
+
+  it('未完了サブタスクがある親の完了操作で拒否理由を表示する', async () => {
+    const { apiClient } = setupHttpFixtureTest({
+      routes: [
+        {
+          method: 'GET',
+          url: '/auth/user',
+          responseFixture: 'api/auth/user.testuser.json',
+        },
+        {
+          method: 'GET',
+          url: '/todo/',
+          response: [
+            {
+              id: 20,
+              name: '親タスクB',
+              detail: '',
+              dueDate: null,
+              createdAt: '2026-03-01T00:00:00.000Z',
+              progressStatus: 'in_progress',
+              recurrenceType: 'none',
+              parentId: null,
+              parentTitle: null,
+              completedSubtaskCount: 0,
+              totalSubtaskCount: 1,
+              subtaskProgressPercent: 0,
+            },
+            {
+              id: 21,
+              name: '子タスクB',
+              detail: '',
+              dueDate: null,
+              createdAt: '2026-03-01T00:00:10.000Z',
+              progressStatus: 'not_started',
+              recurrenceType: 'none',
+              parentId: 20,
+              parentTitle: '親タスクB',
+              completedSubtaskCount: 0,
+              totalSubtaskCount: 0,
+              subtaskProgressPercent: 0,
+            },
+          ],
+        },
+        {
+          method: 'PUT',
+          url: '/todo/20/',
+          status: 409,
+          response: {
+            detail: '未完了のサブタスクがあるため完了できません',
+          },
+        },
+      ],
+    })
+
+    const { container } = renderApp({ apiClient, initialRoute: '/', isAuthenticated: true })
+
+    await waitFor(() => {
+      expect(within(container).getByText('親タスクB')).toBeInTheDocument()
+    })
+
+    fireEvent.click(within(container).getAllByRole('checkbox')[0])
+
+    await waitFor(() => {
+      expect(within(container).getByText('未完了のサブタスクがあるため完了できません')).toBeInTheDocument()
+    })
+  })
 })

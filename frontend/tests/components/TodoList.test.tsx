@@ -24,7 +24,7 @@ describe('TodoList', () => {
         hasSearchCriteria={false}
         onDelete={vi.fn()}
         onEdit={vi.fn(async () => undefined)}
-        onToggleCompletion={vi.fn(async () => undefined)}
+        onToggleCompletion={vi.fn(async () => undefined as string | undefined)}
       />,
     )
 
@@ -34,7 +34,7 @@ describe('TodoList', () => {
 
   it('表示モードでトグル・削除が動作し、編集保存成功で表示モードへ戻る', async () => {
     const onDelete = vi.fn()
-    const onToggleCompletion = vi.fn(async () => undefined)
+    const onToggleCompletion = vi.fn(async () => undefined as string | undefined)
     const onEdit = vi.fn(async () => undefined)
 
     const { container } = render(
@@ -91,7 +91,7 @@ describe('TodoList', () => {
         hasSearchCriteria={true}
         onDelete={vi.fn()}
         onEdit={onEdit}
-        onToggleCompletion={vi.fn(async () => undefined)}
+        onToggleCompletion={vi.fn(async () => undefined as string | undefined)}
       />,
     )
 
