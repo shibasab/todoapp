@@ -2,7 +2,7 @@ import type { CreateTodoRequest, Todo as ApiTodo, UpdateTodoRequest } from '@tod
 
 import type { CreateTodoInput, Todo } from '../models/todo'
 
-type ApiTodoWithParentTitle = ApiTodo &
+type ApiTodoWithParentTitle = Readonly<ApiTodo> &
   Readonly<{
     parentTitle?: string | null
   }>
@@ -20,7 +20,7 @@ export const toUpdateTodoRequest = (todo: Todo): UpdateTodoRequest => ({
   recurrenceType: todo.recurrenceType,
 })
 
-export const toTodoViewModels = (todos: readonly ApiTodo[]): readonly Todo[] => {
+export const toTodoViewModels = (todos: readonly ApiTodoWithParentTitle[]): readonly Todo[] => {
   const todoNameById = new Map(todos.map((todo) => [todo.id, todo.name] as const))
 
   return todos.map((todo) => ({
@@ -34,7 +34,7 @@ export const toTodoViewModels = (todos: readonly ApiTodo[]): readonly Todo[] => 
     parentTitle:
       todo.parentId == null
         ? null
-        : ((todo as ApiTodoWithParentTitle).parentTitle ?? todoNameById.get(todo.parentId) ?? null),
+        : (todo.parentTitle ?? todoNameById.get(todo.parentId) ?? null),
     completedSubtaskCount: todo.completedSubtaskCount,
     totalSubtaskCount: todo.totalSubtaskCount,
     subtaskProgressPercent: todo.subtaskProgressPercent,

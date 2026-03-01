@@ -126,7 +126,7 @@ describe('todoApi', () => {
         },
       ]
 
-      const withParentTitle = [{ ...todos[0], parentTitle: '親タイトル(サーバー返却)' }] as unknown as readonly ApiTodo[]
+      const withParentTitle = [{ ...todos[0], parentTitle: '親タイトル(サーバー返却)' }]
 
       expect(toTodoViewModels(withParentTitle)[0]).toMatchObject({
         parentTitle: '親タイトル(サーバー返却)',
