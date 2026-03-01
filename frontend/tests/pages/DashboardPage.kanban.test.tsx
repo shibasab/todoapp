@@ -4,6 +4,11 @@ import { describe, expect, it } from 'vitest'
 import { setupHttpFixtureTest } from '../helpers/httpMock'
 import { renderApp } from '../helpers/renderPage'
 
+const createDragDataTransfer = (): Pick<DataTransfer, 'setData' | 'effectAllowed'> => ({
+  setData: () => {},
+  effectAllowed: 'move',
+})
+
 describe('DashboardPage Kanban', () => {
   it('カンバンで列移動するとPUTされ、一覧表示へ反映される', async () => {
     const { apiClient, requestLog, clearRequests } = setupHttpFixtureTest({
@@ -34,7 +39,7 @@ describe('DashboardPage Kanban', () => {
 
     const card = within(container).getByTestId('kanban-card-1')
     const targetColumn = within(container).getByTestId('kanban-column-in_progress')
-    const dataTransfer = { setData: () => {}, effectAllowed: 'move' } as unknown as DataTransfer
+    const dataTransfer = createDragDataTransfer()
 
     fireEvent.dragStart(card, { dataTransfer })
     fireEvent.drop(targetColumn)
@@ -80,7 +85,7 @@ describe('DashboardPage Kanban', () => {
 
     const card = within(container).getByTestId('kanban-card-1')
     const targetColumn = within(container).getByTestId('kanban-column-in_progress')
-    const dataTransfer = { setData: () => {}, effectAllowed: 'move' } as unknown as DataTransfer
+    const dataTransfer = createDragDataTransfer()
 
     fireEvent.dragStart(card, { dataTransfer })
     fireEvent.drop(targetColumn)

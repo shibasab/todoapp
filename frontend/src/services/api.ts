@@ -174,8 +174,8 @@ export const createApiClient = (
           const response = await axiosInstance.post<ApiResponse<'post', E>>(url, data)
           return ok(response.data)
         } catch (error) {
-          if (isAxiosError(error) && error.response?.status === 422) {
-            return err(error.response.data as ApiError<'post', E>)
+          if (isAxiosError<ApiError<'post', E>>(error) && error.response?.status === 422) {
+            return err(error.response.data)
           }
           throw error
         }
@@ -191,8 +191,8 @@ export const createApiClient = (
           const response = await axiosInstance.put<ApiResponse<'put', E>>(url, data)
           return ok(response.data)
         } catch (error) {
-          if (isAxiosError(error) && error.response?.status === 422) {
-            return err(error.response.data as ApiError<'put', E>)
+          if (isAxiosError<ApiError<'put', E>>(error) && error.response?.status === 422) {
+            return err(error.response.data)
           }
           throw error
         }

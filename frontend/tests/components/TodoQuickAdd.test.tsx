@@ -24,17 +24,17 @@ describe('TodoQuickAdd', () => {
   it('入力して送信成功すると入力欄をクリアする', async () => {
     const onSubmit = vi.fn(async () => undefined)
     const { container } = render(<TodoQuickAdd onSubmit={onSubmit} />)
-    const input = screen.getByLabelText('クイック入力') as HTMLInputElement
+    const input = screen.getByRole('textbox', { name: 'クイック入力' })
 
     fireEvent.change(input, { target: { value: '明日 資料作成' } })
-    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1)
     })
 
     await waitFor(() => {
-      expect(input.value).toBe('')
+      expect(input).toHaveValue('')
     })
     expect(summarizeFormControls(container)).toMatchSnapshot('form')
     expect(summarizeText(container)).toMatchSnapshot('text')
@@ -52,7 +52,7 @@ describe('TodoQuickAdd', () => {
     const input = screen.getByLabelText('クイック入力')
 
     fireEvent.change(input, { target: { value: 'invalid date text' } })
-    fireEvent.submit(input.closest('form') as HTMLFormElement)
+    fireEvent.click(screen.getByRole('button', { name: '追加' }))
 
     await waitFor(() => {
       expect(screen.getByText('タスク名を入力してください')).toBeInTheDocument()

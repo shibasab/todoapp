@@ -50,7 +50,8 @@ describe('ApiClient typing', () => {
     const result = await resultPromise
     expect(result.ok).toBe(true)
 
-    void ({} as _assertPut)
+    const assertPut: _assertPut = true
+    void assertPut
     mock.restore()
   })
 
@@ -73,7 +74,8 @@ describe('ApiClient typing', () => {
     const result = await resultPromise
     expect(result.ok).toBe(true)
 
-    void ({} as _assertLogout)
+    const assertLogout: _assertLogout = true
+    void assertLogout
     mock.restore()
   })
 })

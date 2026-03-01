@@ -1,7 +1,6 @@
 import { waitFor, fireEvent, within } from '@testing-library/react'
+import { AuthResponseSchema } from '@todoapp/shared'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-
-import type { Auth } from '../../src/models/auth'
 
 import { summarizeFormControls, summarizeText } from '../helpers/domSnapshot'
 import { loadFixture } from '../helpers/fixtures'
@@ -9,7 +8,7 @@ import { setupHttpFixtureTest } from '../helpers/httpMock'
 import { localStorageMock, resetLocalStorageMock } from '../helpers/localStorageMock'
 import { renderApp } from '../helpers/renderPage'
 
-const mockAuthResponse = loadFixture<Auth>('api/auth/register.newuser.json')
+const mockAuthResponse = AuthResponseSchema.parse(loadFixture('api/auth/register.newuser.json'))
 
 describe('新規登録フロー', () => {
   beforeEach(() => {

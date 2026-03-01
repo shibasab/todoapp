@@ -7,7 +7,7 @@ const FIXTURES_ROOT_WITH_SEPARATOR = FIXTURES_ROOT.endsWith(sep) ? FIXTURES_ROOT
 /**
  * tests/fixtures 配下の JSON を読み込む
  */
-export const loadFixture = <T>(fixturePath: string): T => {
+export const loadFixture = (fixturePath: string): unknown => {
   const normalizedPath = fixturePath.replace(/^[/\\]+/, '')
   const absoluteFixturePath = normalize(resolve(FIXTURES_ROOT, normalizedPath))
   const fixturePathLower = absoluteFixturePath.toLowerCase()
@@ -18,5 +18,5 @@ export const loadFixture = <T>(fixturePath: string): T => {
   }
 
   const raw = readFileSync(absoluteFixturePath, 'utf-8')
-  return JSON.parse(raw) as T
+  return JSON.parse(raw)
 }
