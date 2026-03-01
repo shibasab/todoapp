@@ -1,11 +1,9 @@
-/**
- * バリデーションエラー型定義
- * バックエンド (backend/app/schemas/errors.py) と対応
- */
+import type { ValidationErrorResponse as SharedValidationErrorResponse, ValidationIssue } from '@todoapp/shared'
 
 type ValidationErrorBase = Readonly<{
   field: string
-  reason: unknown
+  reason: string
+  limit?: number
 }>
 
 export type RequiredError = ValidationErrorBase &
@@ -35,16 +33,14 @@ export type InvalidFormatError = ValidationErrorBase &
     reason: 'invalid_format'
   }>
 
-export type ValidationError =
-  | RequiredError
-  | UniqueViolationError
-  | MaxLengthError
-  | MinLengthError
-  | InvalidFormatError
+export type ValidationError = ValidationErrorBase
 
-export type ValidationErrorResponse = Readonly<{
-  status: number
-  type: 'validation_error'
-  errors: readonly ValidationError[]
-  detail?: string
-}>
+export type ValidationErrorResponse = SharedValidationErrorResponse
+
+export const toValidationError = (issue: ValidationIssue): ValidationError => ({
+  field: issue.field,
+  reason: issue.reason,
+})
+
+export const toValidationErrors = (issues: readonly ValidationIssue[]): readonly ValidationError[] =>
+  issues.map((issue) => toValidationError(issue))

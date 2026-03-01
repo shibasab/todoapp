@@ -1,11 +1,11 @@
 import { todoPath } from '@todoapp/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { ValidationError } from '../models/error'
 import type { CreateTodoRequest, Todo, TodoRecurrenceType } from '../models/todo'
 import type { TodoSearchParams, TodoSearchState } from './todoSearch'
 
 import { useApiClient } from '../contexts/ApiContext'
+import { toValidationErrors, type ValidationError } from '../models/error'
 import { validateRequired, validateMaxLength } from '../services/validation'
 
 // バリデーション制約値（バックエンドと同期）
@@ -147,7 +147,7 @@ export const useTodo = (): TodoService => {
         parentId: data.parentId ?? null,
       })
       if (!result.ok) {
-        return result.error.errors as readonly ValidationError[]
+        return toValidationErrors(result.error.errors)
       }
       await fetchTodos(lastSearchRef.current)
     },
@@ -168,7 +168,7 @@ export const useTodo = (): TodoService => {
         ...body,
       })
       if (!result.ok) {
-        return result.error.errors as readonly ValidationError[]
+        return toValidationErrors(result.error.errors)
       }
       await fetchTodos(lastSearchRef.current)
     },
