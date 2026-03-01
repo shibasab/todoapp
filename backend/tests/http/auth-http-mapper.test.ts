@@ -70,6 +70,11 @@ describe("auth http error mapper", () => {
         detail: "Internal server error",
       },
     });
+
+    if (conflict.status === 409) {
+      expect(conflict.body.type).toBe("conflict_error");
+      expect(conflict.body.status).toBe(409);
+    }
   });
 
   it("未定義のユニオン値はNotExhaustiveErrorを投げる", () => {

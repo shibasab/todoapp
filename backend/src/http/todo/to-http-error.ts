@@ -13,8 +13,12 @@ export type HttpError =
       body: ValidationErrorResponse;
     }>
   | Readonly<{
-      status: 401 | 404 | 409 | 500;
-      body: DetailErrorResponse | ConflictErrorResponse;
+      status: 409;
+      body: ConflictErrorResponse;
+    }>
+  | Readonly<{
+      status: 401 | 404 | 500;
+      body: DetailErrorResponse;
     }>;
 
 export const toTodoHttpError = (errorValue: TodoUseCaseError): HttpError => {
