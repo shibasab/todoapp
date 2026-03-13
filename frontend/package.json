@@ -37,7 +37,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "axios-mock-adapter": "^2.1.0",
     "happy-dom": "^20.0.11",
-    "oxfmt": "^0.22.0",
+    "oxfmt": "^0.40.0",
     "oxlint": "^1.55.0",
     "postcss": "^8.5.8",
     "typescript": "^5.9.3",
