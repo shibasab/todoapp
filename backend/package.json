@@ -21,7 +21,7 @@
     "prisma:db:push": "prisma db push --schema prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^7.5.0",
     "@todoapp/shared": "file:../shared",
     "bcryptjs": "^3.0.3",
     "hono": "^4.12.8",
