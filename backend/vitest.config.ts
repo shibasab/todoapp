@@ -1,10 +1,10 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ['tests/**/*.test.ts'],
     coverage: {
-      provider: "v8",
+      provider: 'v8',
       thresholds: {
         lines: 90,
         branches: 90,
@@ -13,4 +13,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

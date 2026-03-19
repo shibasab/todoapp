@@ -1,79 +1,80 @@
-import { describe, expect, it } from "vitest";
-import { toTodoHttpError } from "../src/http/todo/to-http-error";
-import type { TodoUseCaseError } from "../src/usecases/todo/errors";
+import { describe, expect, it } from 'vitest'
 
-describe("todo http error mapper", () => {
-  it("TodoUseCaseErrorの各ユニオン値をHTTPエラーへ変換する", () => {
+import { toTodoHttpError } from '../src/http/todo/to-http-error'
+import type { TodoUseCaseError } from '../src/usecases/todo/errors'
+
+describe('todo http error mapper', () => {
+  it('TodoUseCaseErrorの各ユニオン値をHTTPエラーへ変換する', () => {
     const validation = toTodoHttpError({
-      type: "ValidationError",
-      detail: "Validation error",
-      errors: [{ field: "name", reason: "required" }],
-    });
+      type: 'ValidationError',
+      detail: 'Validation error',
+      errors: [{ field: 'name', reason: 'required' }],
+    })
     const unauthorized = toTodoHttpError({
-      type: "Unauthorized",
-      detail: "Could not validate credentials",
-    });
+      type: 'Unauthorized',
+      detail: 'Could not validate credentials',
+    })
     const notFound = toTodoHttpError({
-      type: "NotFound",
-      detail: "Todo not found",
-    });
+      type: 'NotFound',
+      detail: 'Todo not found',
+    })
     const conflict = toTodoHttpError({
-      type: "Conflict",
-      detail: "Conflict error",
-    });
+      type: 'Conflict',
+      detail: 'Conflict error',
+    })
     const internal = toTodoHttpError({
-      type: "InternalError",
-      detail: "Internal server error",
-    });
+      type: 'InternalError',
+      detail: 'Internal server error',
+    })
 
     expect(validation).toEqual({
       status: 422,
       body: {
         status: 422,
-        type: "validation_error",
-        detail: "Validation error",
-        errors: [{ field: "name", reason: "required" }],
+        type: 'validation_error',
+        detail: 'Validation error',
+        errors: [{ field: 'name', reason: 'required' }],
       },
-    });
+    })
     expect(unauthorized).toEqual({
       status: 401,
       body: {
-        detail: "Could not validate credentials",
+        detail: 'Could not validate credentials',
       },
-    });
+    })
     expect(notFound).toEqual({
       status: 404,
       body: {
-        detail: "Todo not found",
+        detail: 'Todo not found',
       },
-    });
+    })
     expect(conflict).toEqual({
       status: 409,
       body: {
         status: 409,
-        type: "conflict_error",
-        detail: "Conflict error",
+        type: 'conflict_error',
+        detail: 'Conflict error',
       },
-    });
+    })
     expect(internal).toEqual({
       status: 500,
       body: {
-        detail: "Internal server error",
+        detail: 'Internal server error',
       },
-    });
+    })
 
     if (conflict.status === 409) {
-      expect(conflict.body.type).toBe("conflict_error");
-      expect(conflict.body.status).toBe(409);
+      expect(conflict.body.type).toBe('conflict_error')
+      expect(conflict.body.status).toBe(409)
     }
-  });
+  })
 
-  it("未定義のユニオン値はNotExhaustiveErrorを投げる", () => {
+  it('未定義のユニオン値はNotExhaustiveErrorを投げる', () => {
     const invalidError = {
-      type: "UnknownError",
-      detail: "unknown",
-    } as unknown as TodoUseCaseError;
+      type: 'UnknownError',
+      detail: 'unknown',
+    } as unknown as TodoUseCaseError
 
-    expect(() => toTodoHttpError(invalidError)).toThrow("TodoUseCaseError.type");
-  });
-});
+    expect(() => toTodoHttpError(invalidError)).toThrow('TodoUseCaseError.type')
+  })
+})

@@ -1,89 +1,85 @@
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./auth";
-import type {
-  ConflictErrorResponse,
-  DetailErrorResponse,
-  ValidationErrorResponse,
-} from "./response";
-import type { CreateTodoRequest, ListTodoQuery, Todo, UpdateTodoRequest } from "./todo";
+import type { AuthResponse, LoginRequest, RegisterRequest, User } from './auth'
+import type { ConflictErrorResponse, DetailErrorResponse, ValidationErrorResponse } from './response'
+import type { CreateTodoRequest, ListTodoQuery, Todo, UpdateTodoRequest } from './todo'
 
-export type TodoPath = `/todo/${number}/`;
+export type TodoPath = `/todo/${number}/`
 
-const buildTodoPath = (todoId: number): TodoPath => `/todo/${todoId}/`;
+const buildTodoPath = (todoId: number): TodoPath => `/todo/${todoId}/`
 
-export const todoPath = (todoId: number): TodoPath => buildTodoPath(todoId);
+export const todoPath = (todoId: number): TodoPath => buildTodoPath(todoId)
 
 type TodoPathContracts<TContract extends object> = {
-  [path in TodoPath]: TContract;
-};
+  [path in TodoPath]: TContract
+}
 
-type MutationErrorResponse = ValidationErrorResponse | ConflictErrorResponse;
+type MutationErrorResponse = ValidationErrorResponse | ConflictErrorResponse
 
 export type ApiContracts = {
   get: {
-    "/todo/": { query: ListTodoQuery; response: readonly Todo[] };
-    "/auth/user": { response: User };
-  } & TodoPathContracts<{ response: Todo }>;
+    '/todo/': { query: ListTodoQuery; response: readonly Todo[] }
+    '/auth/user': { response: User }
+  } & TodoPathContracts<{ response: Todo }>
   post: {
-    "/todo/": {
-      request: CreateTodoRequest;
-      response: Todo;
-      error: MutationErrorResponse;
-    };
-    "/auth/login": {
-      request: LoginRequest;
-      response: AuthResponse;
-      error: MutationErrorResponse;
-    };
-    "/auth/register": {
-      request: RegisterRequest;
-      response: AuthResponse;
-      error: MutationErrorResponse;
-    };
-    "/auth/logout": { response: DetailErrorResponse };
-  };
+    '/todo/': {
+      request: CreateTodoRequest
+      response: Todo
+      error: MutationErrorResponse
+    }
+    '/auth/login': {
+      request: LoginRequest
+      response: AuthResponse
+      error: MutationErrorResponse
+    }
+    '/auth/register': {
+      request: RegisterRequest
+      response: AuthResponse
+      error: MutationErrorResponse
+    }
+    '/auth/logout': { response: DetailErrorResponse }
+  }
   put: TodoPathContracts<{
-    request: UpdateTodoRequest;
-    response: Todo;
-    error: MutationErrorResponse;
-  }>;
-  delete: TodoPathContracts<{ response: void }>;
-};
+    request: UpdateTodoRequest
+    response: Todo
+    error: MutationErrorResponse
+  }>
+  delete: TodoPathContracts<{ response: void }>
+}
 
-export type ApiMethod = keyof ApiContracts;
+export type ApiMethod = keyof ApiContracts
 
-export type ApiEndpoint<M extends ApiMethod> = keyof ApiContracts[M];
+export type ApiEndpoint<M extends ApiMethod> = keyof ApiContracts[M]
 
-type EndpointContract<M extends ApiMethod, E extends ApiEndpoint<M>> = ApiContracts[M][E];
+type EndpointContract<M extends ApiMethod, E extends ApiEndpoint<M>> = ApiContracts[M][E]
 
 export type ApiResponse<M extends ApiMethod, E extends ApiEndpoint<M>> =
   EndpointContract<M, E> extends {
-    response: infer TResponse;
+    response: infer TResponse
   }
     ? TResponse
-    : never;
+    : never
 
 export type ApiQuery<M extends ApiMethod, E extends ApiEndpoint<M>> =
   EndpointContract<M, E> extends {
-    query: infer TQuery;
+    query: infer TQuery
   }
     ? TQuery
-    : undefined;
+    : undefined
 
 export type ApiRequest<M extends ApiMethod, E extends ApiEndpoint<M>> =
   EndpointContract<M, E> extends {
-    request: infer TRequest;
+    request: infer TRequest
   }
     ? TRequest
-    : undefined;
+    : undefined
 
 export type ApiError<M extends ApiMethod, E extends ApiEndpoint<M>> =
   EndpointContract<M, E> extends {
-    error: infer TError;
+    error: infer TError
   }
     ? TError
-    : never;
+    : never
 
-export type GetEndpoint = ApiEndpoint<"get">;
-export type PostEndpoint = ApiEndpoint<"post">;
-export type PutEndpoint = ApiEndpoint<"put">;
-export type DeleteEndpoint = ApiEndpoint<"delete">;
+export type GetEndpoint = ApiEndpoint<'get'>
+export type PostEndpoint = ApiEndpoint<'post'>
+export type PutEndpoint = ApiEndpoint<'put'>
+export type DeleteEndpoint = ApiEndpoint<'delete'>

@@ -1,19 +1,16 @@
-import { fromPromise } from "@todoapp/shared";
-import type { AuthUserRecord } from "../../domain/auth/types";
-import type {
-  AuthUserRepoCreateError,
-  AuthUserRepoPort,
-  CreateAuthUserInput,
-} from "../../ports/auth-user-repo-port";
-import type { PrismaClient } from "../prisma/client";
+import { fromPromise } from '@todoapp/shared'
+
+import type { AuthUserRecord } from '../../domain/auth/types'
+import type { AuthUserRepoCreateError, AuthUserRepoPort, CreateAuthUserInput } from '../../ports/auth-user-repo-port'
+import type { PrismaClient } from '../prisma/client'
 
 const toAuthUserRecord = (
   user: Readonly<{
-    id: number;
-    username: string;
-    email: string;
-    hashedPassword: string;
-    isActive: boolean;
+    id: number
+    username: string
+    email: string
+    hashedPassword: string
+    isActive: boolean
   }>,
 ): AuthUserRecord => ({
   id: user.id,
@@ -21,26 +18,26 @@ const toAuthUserRecord = (
   email: user.email,
   hashedPassword: user.hashedPassword,
   isActive: user.isActive,
-});
+})
 
 const isUniqueConstraintError = (errorValue: unknown): boolean => {
-  if (typeof errorValue !== "object" || errorValue == null || !("code" in errorValue)) {
-    return false;
+  if (typeof errorValue !== 'object' || errorValue == null || !('code' in errorValue)) {
+    return false
   }
 
-  return errorValue.code === "P2002";
-};
+  return errorValue.code === 'P2002'
+}
 
 const mapCreateUserError = (errorValue: unknown): AuthUserRepoCreateError =>
   isUniqueConstraintError(errorValue)
     ? {
-        type: "DuplicateUsername",
-        detail: "Username already registered",
+        type: 'DuplicateUsername',
+        detail: 'Username already registered',
       }
     : {
-        type: "Unexpected",
-        detail: "Unexpected repository error",
-      };
+        type: 'Unexpected',
+        detail: 'Unexpected repository error',
+      }
 
 export const createPrismaAuthUserRepoPort = (prisma: PrismaClient): AuthUserRepoPort => ({
   findById: async (id) => {
@@ -48,18 +45,18 @@ export const createPrismaAuthUserRepoPort = (prisma: PrismaClient): AuthUserRepo
       where: {
         id,
       },
-    });
+    })
 
-    return user == null ? null : toAuthUserRecord(user);
+    return user == null ? null : toAuthUserRecord(user)
   },
   findByUsername: async (username) => {
     const user = await prisma.user.findUnique({
       where: {
         username,
       },
-    });
+    })
 
-    return user == null ? null : toAuthUserRecord(user);
+    return user == null ? null : toAuthUserRecord(user)
   },
   create: async (input: CreateAuthUserInput) =>
     fromPromise(
@@ -75,4 +72,4 @@ export const createPrismaAuthUserRepoPort = (prisma: PrismaClient): AuthUserRepo
         .then(toAuthUserRecord),
       mapCreateUserError,
     ),
-});
+})

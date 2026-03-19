@@ -1,13 +1,14 @@
-import { err, ok } from "@todoapp/shared";
-import { toTodoProgressStatus, toTodoRecurrenceType } from "../../domain/todo/normalization";
-import type { TodoItem } from "../../domain/todo/types";
-import type { TodoQuery, TodoRepoPort } from "../../ports/todo-repo-port";
-import type { Prisma, PrismaClient, Todo } from "../prisma/client";
+import { err, ok } from '@todoapp/shared'
+
+import { toTodoProgressStatus, toTodoRecurrenceType } from '../../domain/todo/normalization'
+import type { TodoItem } from '../../domain/todo/types'
+import type { TodoQuery, TodoRepoPort } from '../../ports/todo-repo-port'
+import type { Prisma, PrismaClient, Todo } from '../prisma/client'
 
 type PrismaTodoClient = Readonly<{
-  todo: PrismaClient["todo"];
-  $transaction?: PrismaClient["$transaction"];
-}>;
+  todo: PrismaClient['todo']
+  $transaction?: PrismaClient['$transaction']
+}>
 
 const toTodoItem = (todo: Todo): TodoItem => ({
   id: todo.id,
@@ -21,81 +22,78 @@ const toTodoItem = (todo: Todo): TodoItem => ({
   parentId: todo.parentId,
   parentTitle: null,
   previousTodoId: todo.previousTodoId,
-});
+})
 
-type TodoWithParentRelation = Todo & Readonly<{ parent: Readonly<{ name: string }> | null }>;
+type TodoWithParentRelation = Todo & Readonly<{ parent: Readonly<{ name: string }> | null }>
 
 const toTodoItemWithParent = (todo: TodoWithParentRelation): TodoItem => ({
   ...toTodoItem(todo),
   parentTitle: todo.parent?.name ?? null,
-});
+})
 
-const toDueDateFilterWhere = (
-  dueDateFilter: TodoQuery["dueDateFilter"],
-  now: Date,
-): Prisma.TodoWhereInput => {
-  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const weekEnd = new Date(todayStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+const toDueDateFilterWhere = (dueDateFilter: TodoQuery['dueDateFilter'], now: Date): Prisma.TodoWhereInput => {
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+  const weekEnd = new Date(todayStart.getTime() + 6 * 24 * 60 * 60 * 1000)
 
   switch (dueDateFilter) {
     case undefined:
-    case "all":
-      return {};
-    case "today":
+    case 'all':
+      return {}
+    case 'today':
       return {
         dueDate: {
           gte: todayStart,
           lt: tomorrowStart,
         },
-      };
-    case "this_week":
+      }
+    case 'this_week':
       return {
         dueDate: {
           gte: todayStart,
           lte: weekEnd,
         },
-      };
-    case "overdue":
+      }
+    case 'overdue':
       return {
         dueDate: {
           lt: todayStart,
         },
-      };
-    case "none":
+      }
+    case 'none':
       return {
         dueDate: null,
-      };
+      }
     default: {
-      const exhaustiveCheck: never = dueDateFilter;
-      throw new Error(`Not exhaustive: dueDateFilter (${String(exhaustiveCheck)})`);
+      const exhaustiveCheck: never = dueDateFilter
+      throw new Error(`Not exhaustive: dueDateFilter (${String(exhaustiveCheck)})`)
     }
   }
-};
+}
 
 const hasErrorCode = (
   errorValue: unknown,
 ): errorValue is Readonly<{
-  code: string;
-  meta?: Readonly<{ target?: string | readonly string[] }>;
-}> => typeof errorValue === "object" && errorValue != null && "code" in errorValue;
+  code: string
+  meta?: Readonly<{ target?: string | readonly string[] }>
+}> => typeof errorValue === 'object' && errorValue != null && 'code' in errorValue
 
 const isDuplicatePreviousTodoError = (errorValue: unknown): boolean => {
-  if (!hasErrorCode(errorValue) || errorValue.code !== "P2002") {
-    return false;
+  if (!hasErrorCode(errorValue) || errorValue.code !== 'P2002') {
+    return false
   }
 
-  const target = errorValue.meta?.target;
-  if (typeof target === "string") {
-    return target === "previousTodoId" || target === "previous_todo_id";
+  const target = errorValue.meta?.target
+  if (typeof target === 'string') {
+    return target === 'previousTodoId' || target === 'previous_todo_id'
   }
 
   if (Array.isArray(target)) {
-    return target.includes("previousTodoId") || target.includes("previous_todo_id");
+    return target.includes('previousTodoId') || target.includes('previous_todo_id')
   }
 
-  return false;
-};
+  return false
+}
 
 const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
   listByOwner: async (query) => {
@@ -114,11 +112,11 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
-    });
+    })
 
-    return todos.map(toTodoItemWithParent);
+    return todos.map(toTodoItemWithParent)
   },
   findByIdForOwner: async (id, ownerId) => {
     const todo = await client.todo.findFirst({
@@ -133,9 +131,9 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
           },
         },
       },
-    });
+    })
 
-    return todo == null ? null : toTodoItemWithParent(todo);
+    return todo == null ? null : toTodoItemWithParent(todo)
   },
   create: async (input) => {
     try {
@@ -162,23 +160,23 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
             },
           }),
         ),
-      );
+      )
     } catch (errorValue) {
       if (isDuplicatePreviousTodoError(errorValue)) {
         return err({
-          type: "DuplicatePreviousTodo",
-        });
+          type: 'DuplicatePreviousTodo',
+        })
       }
 
-      if (hasErrorCode(errorValue) && errorValue.code === "P2002") {
+      if (hasErrorCode(errorValue) && errorValue.code === 'P2002') {
         return err({
-          type: "DuplicateActiveName",
-        });
+          type: 'DuplicateActiveName',
+        })
       }
 
       return err({
-        type: "Unexpected",
-      });
+        type: 'Unexpected',
+      })
     }
   },
   update: async (input) => {
@@ -193,12 +191,8 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
               ...(input.name === undefined ? {} : { name: input.name }),
               ...(input.detail === undefined ? {} : { detail: input.detail }),
               ...(input.dueDate === undefined ? {} : { dueDate: input.dueDate }),
-              ...(input.progressStatus === undefined
-                ? {}
-                : { progressStatus: input.progressStatus }),
-              ...(input.recurrenceType === undefined
-                ? {}
-                : { recurrenceType: input.recurrenceType }),
+              ...(input.progressStatus === undefined ? {} : { progressStatus: input.progressStatus }),
+              ...(input.recurrenceType === undefined ? {} : { recurrenceType: input.recurrenceType }),
               ...(input.activeName === undefined ? {} : { activeName: input.activeName }),
             },
             include: {
@@ -210,17 +204,17 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
             },
           }),
         ),
-      );
+      )
     } catch (errorValue) {
-      if (hasErrorCode(errorValue) && errorValue.code === "P2002") {
+      if (hasErrorCode(errorValue) && errorValue.code === 'P2002') {
         return err({
-          type: "DuplicateActiveName",
-        });
+          type: 'DuplicateActiveName',
+        })
       }
 
       return err({
-        type: "Unexpected",
-      });
+        type: 'Unexpected',
+      })
     }
   },
   deleteById: async (id, ownerId) => {
@@ -229,17 +223,17 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         id,
         ownerId,
       },
-    });
+    })
 
     if (target == null) {
-      return;
+      return
     }
 
     await client.todo.delete({
       where: {
         id,
       },
-    });
+    })
   },
   countByParentId: async (parentId, ownerId) =>
     client.todo.count({
@@ -253,7 +247,7 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
       where: {
         parentId,
         ownerId,
-        progressStatus: "completed",
+        progressStatus: 'completed',
       },
     }),
   findIncompleteSubtask: async (parentId, ownerId) => {
@@ -262,7 +256,7 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         parentId,
         ownerId,
         progressStatus: {
-          not: "completed",
+          not: 'completed',
         },
       },
       include: {
@@ -272,9 +266,9 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
           },
         },
       },
-    });
+    })
 
-    return todo == null ? null : toTodoItemWithParent(todo);
+    return todo == null ? null : toTodoItemWithParent(todo)
   },
   findDuplicateActiveName: async (ownerId, name, excludeId) => {
     const duplicated = await client.todo.findFirst({
@@ -282,7 +276,7 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         ownerId,
         name,
         progressStatus: {
-          not: "completed",
+          not: 'completed',
         },
         ...(excludeId == null
           ? {}
@@ -299,13 +293,13 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
           },
         },
       },
-    });
+    })
 
-    return duplicated == null ? null : toTodoItemWithParent(duplicated);
+    return duplicated == null ? null : toTodoItemWithParent(duplicated)
   },
   runInTransaction: async (callback) => {
     if (client.$transaction == null) {
-      return callback(createRepo(client));
+      return callback(createRepo(client))
     }
 
     return client.$transaction(async (transactionClient) => {
@@ -313,22 +307,22 @@ const createRepo = (client: PrismaTodoClient): TodoRepoPort => ({
         createRepo({
           todo: transactionClient.todo,
         }),
-      );
-    });
+      )
+    })
   },
-});
+})
 
 export const createPrismaTodoRepoPort = (prisma: PrismaClient): TodoRepoPort =>
   createRepo({
     todo: prisma.todo,
     $transaction: prisma.$transaction.bind(prisma),
-  });
+  })
 
 export const createPrismaTodoRepoPortForTesting = (
   client: Readonly<{
-    todo: PrismaClient["todo"];
+    todo: PrismaClient['todo']
   }>,
 ): TodoRepoPort =>
   createRepo({
     todo: client.todo,
-  });
+  })

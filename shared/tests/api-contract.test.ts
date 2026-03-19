@@ -1,12 +1,5 @@
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from 'vitest'
 
-import type {
-  ApiEndpoint,
-  ApiError,
-  ApiQuery,
-  ApiRequest,
-  ApiResponse,
-} from "../src/contracts/api";
 import {
   type ConflictErrorResponse,
   type CreateTodoRequest,
@@ -16,42 +9,37 @@ import {
   type UpdateTodoRequest,
   type ValidationErrorResponse,
   todoPath,
-} from "../src";
+} from '../src'
+import type { ApiEndpoint, ApiError, ApiQuery, ApiRequest, ApiResponse } from '../src/contracts/api'
 
-describe("API contract", () => {
-  it("todoPathでTODO詳細URLを生成できる", () => {
-    expect(todoPath(42)).toBe("/todo/42/");
-  });
+describe('API contract', () => {
+  it('todoPathでTODO詳細URLを生成できる', () => {
+    expect(todoPath(42)).toBe('/todo/42/')
+  })
 
-  it("POST /todo/ の入出力契約を取得できる", () => {
-    expectTypeOf<ApiRequest<"post", "/todo/">>().toEqualTypeOf<CreateTodoRequest>();
-    expectTypeOf<ApiResponse<"post", "/todo/">>().toEqualTypeOf<Todo>();
-    expectTypeOf<ApiError<"post", "/todo/">>().toEqualTypeOf<
-      ValidationErrorResponse | ConflictErrorResponse
-    >();
-  });
+  it('POST /todo/ の入出力契約を取得できる', () => {
+    expectTypeOf<ApiRequest<'post', '/todo/'>>().toEqualTypeOf<CreateTodoRequest>()
+    expectTypeOf<ApiResponse<'post', '/todo/'>>().toEqualTypeOf<Todo>()
+    expectTypeOf<ApiError<'post', '/todo/'>>().toEqualTypeOf<ValidationErrorResponse | ConflictErrorResponse>()
+  })
 
-  it("PUT /todo/:id/ の入出力契約を取得できる", () => {
-    expectTypeOf<ApiEndpoint<"put">>().toEqualTypeOf<`/todo/${number}/`>();
-    expectTypeOf<ApiRequest<"put", `/todo/${number}/`>>().toEqualTypeOf<UpdateTodoRequest>();
-    expectTypeOf<ApiResponse<"put", `/todo/${number}/`>>().toEqualTypeOf<Todo>();
-    expectTypeOf<ApiError<"put", `/todo/${number}/`>>().toEqualTypeOf<
-      ValidationErrorResponse | ConflictErrorResponse
-    >();
-  });
+  it('PUT /todo/:id/ の入出力契約を取得できる', () => {
+    expectTypeOf<ApiEndpoint<'put'>>().toEqualTypeOf<`/todo/${number}/`>()
+    expectTypeOf<ApiRequest<'put', `/todo/${number}/`>>().toEqualTypeOf<UpdateTodoRequest>()
+    expectTypeOf<ApiResponse<'put', `/todo/${number}/`>>().toEqualTypeOf<Todo>()
+    expectTypeOf<ApiError<'put', `/todo/${number}/`>>().toEqualTypeOf<ValidationErrorResponse | ConflictErrorResponse>()
+  })
 
-  it("POST /auth/register のエラー契約を取得できる", () => {
-    expectTypeOf<ApiError<"post", "/auth/register">>().toEqualTypeOf<
-      ValidationErrorResponse | ConflictErrorResponse
-    >();
-  });
+  it('POST /auth/register のエラー契約を取得できる', () => {
+    expectTypeOf<ApiError<'post', '/auth/register'>>().toEqualTypeOf<ValidationErrorResponse | ConflictErrorResponse>()
+  })
 
-  it("GET /todo/ のクエリ契約を取得できる", () => {
-    expectTypeOf<ApiQuery<"get", "/todo/">>().toEqualTypeOf<ListTodoQuery>();
-    expectTypeOf<ApiResponse<"get", "/todo/">>().toEqualTypeOf<readonly Todo[]>();
-  });
+  it('GET /todo/ のクエリ契約を取得できる', () => {
+    expectTypeOf<ApiQuery<'get', '/todo/'>>().toEqualTypeOf<ListTodoQuery>()
+    expectTypeOf<ApiResponse<'get', '/todo/'>>().toEqualTypeOf<readonly Todo[]>()
+  })
 
-  it("POST /auth/logout のレスポンス契約を取得できる", () => {
-    expectTypeOf<ApiResponse<"post", "/auth/logout">>().toEqualTypeOf<DetailErrorResponse>();
-  });
-});
+  it('POST /auth/logout のレスポンス契約を取得できる', () => {
+    expectTypeOf<ApiResponse<'post', '/auth/logout'>>().toEqualTypeOf<DetailErrorResponse>()
+  })
+})

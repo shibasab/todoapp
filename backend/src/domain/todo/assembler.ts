@@ -1,19 +1,17 @@
-import type { TodoItem, TodoListItem } from "./types";
+import type { TodoItem, TodoListItem } from './types'
 
 export const toDateOnlyString = (dateValue: Date | null): string | null =>
-  dateValue == null ? null : dateValue.toISOString().slice(0, 10);
+  dateValue == null ? null : dateValue.toISOString().slice(0, 10)
 
 export const toTodoListItem = (
   todo: TodoItem,
   stats: Readonly<{
-    completedSubtaskCount: number;
-    totalSubtaskCount: number;
+    completedSubtaskCount: number
+    totalSubtaskCount: number
   }>,
 ): TodoListItem => {
   const subtaskProgressPercent =
-    stats.totalSubtaskCount === 0
-      ? 0
-      : Math.floor((stats.completedSubtaskCount * 100) / stats.totalSubtaskCount);
+    stats.totalSubtaskCount === 0 ? 0 : Math.floor((stats.completedSubtaskCount * 100) / stats.totalSubtaskCount)
 
   return {
     id: todo.id,
@@ -28,5 +26,5 @@ export const toTodoListItem = (
     completedSubtaskCount: stats.completedSubtaskCount,
     totalSubtaskCount: stats.totalSubtaskCount,
     subtaskProgressPercent,
-  };
-};
+  }
+}

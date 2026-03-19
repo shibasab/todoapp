@@ -1,68 +1,67 @@
-import { Hono } from "hono";
-import type { HealthResponse } from "@todoapp/shared";
-import type { AuthConfig } from "./domain/auth/types";
-import { createAuthRoutes } from "./http/auth/routes";
-import { createTodoHttpRoutes } from "./http/todo/routes";
-import { createPrismaClient, resolveDatabaseUrl } from "./infra/prisma/client";
-import type { PrismaClient } from "./infra/prisma/client";
+import type { HealthResponse } from '@todoapp/shared'
+import { Hono } from 'hono'
+
+import type { AuthConfig } from './domain/auth/types'
+import { createAuthRoutes } from './http/auth/routes'
+import { createTodoHttpRoutes } from './http/todo/routes'
+import { createPrismaClient, resolveDatabaseUrl } from './infra/prisma/client'
+import type { PrismaClient } from './infra/prisma/client'
 
 const buildHealthResponse = (): HealthResponse => ({
-  status: "ok",
-});
+  status: 'ok',
+})
 
-type RuntimeEnv = Readonly<Record<string, string | undefined>>;
+type RuntimeEnv = Readonly<Record<string, string | undefined>>
 
 export type AppDependencies = Readonly<{
-  prisma: PrismaClient;
-  authConfig: AuthConfig;
-}>;
+  prisma: PrismaClient
+  authConfig: AuthConfig
+}>
 
 const readRuntimeEnv = (): RuntimeEnv => {
-  const runtime = globalThis;
-  if ("Bun" in runtime) {
-    const maybeBun = runtime.Bun;
-    if (maybeBun && typeof maybeBun === "object" && "env" in maybeBun) {
-      const env = maybeBun.env;
-      if (env && typeof env === "object") {
-        return env;
+  const runtime = globalThis
+  if ('Bun' in runtime) {
+    const maybeBun = runtime.Bun
+    if (maybeBun && typeof maybeBun === 'object' && 'env' in maybeBun) {
+      const env = maybeBun.env
+      if (env && typeof env === 'object') {
+        return env
       }
     }
   }
 
-  return process.env;
-};
+  return process.env
+}
 
 const readJwtAccessTokenExpireMinutes = (rawValue: string | undefined): number => {
-  if (rawValue == null || rawValue === "") {
-    return 30;
+  if (rawValue == null || rawValue === '') {
+    return 30
   }
 
-  const parsed = Number(rawValue);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 30;
-};
+  const parsed = Number(rawValue)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 30
+}
 
 const createDefaultDependencies = (): AppDependencies => {
-  const runtimeEnv = readRuntimeEnv();
+  const runtimeEnv = readRuntimeEnv()
   return {
     prisma: createPrismaClient(resolveDatabaseUrl(runtimeEnv.DATABASE_URL)),
     authConfig: {
-      jwtSecret: runtimeEnv.JWT_SECRET_KEY ?? runtimeEnv.SECRET_KEY ?? "development-secret-key",
-      jwtAccessTokenExpireMinutes: readJwtAccessTokenExpireMinutes(
-        runtimeEnv.JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
-      ),
+      jwtSecret: runtimeEnv.JWT_SECRET_KEY ?? runtimeEnv.SECRET_KEY ?? 'development-secret-key',
+      jwtAccessTokenExpireMinutes: readJwtAccessTokenExpireMinutes(runtimeEnv.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
     },
-  };
-};
+  }
+}
 
 export const createApp = (dependencies: AppDependencies = createDefaultDependencies()): Hono => {
-  const app = new Hono({ strict: false });
+  const app = new Hono({ strict: false })
 
-  app.get("/health", (context) => {
-    return context.json(buildHealthResponse());
-  });
+  app.get('/health', (context) => {
+    return context.json(buildHealthResponse())
+  })
 
-  app.route("/api/auth", createAuthRoutes(dependencies));
-  app.route("/api/todo", createTodoHttpRoutes(dependencies));
+  app.route('/api/auth', createAuthRoutes(dependencies))
+  app.route('/api/todo', createTodoHttpRoutes(dependencies))
 
-  return app;
-};
+  return app
+}

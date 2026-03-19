@@ -1,62 +1,58 @@
-import type { AuthValidationError } from "../../domain/auth/types";
+import type { AuthValidationError } from '../../domain/auth/types'
 
 export type AuthUseCaseError =
   | Readonly<{
-      type: "ValidationError";
-      detail: string;
-      errors: readonly AuthValidationError[];
+      type: 'ValidationError'
+      detail: string
+      errors: readonly AuthValidationError[]
     }>
   | Readonly<{
-      type: "Unauthorized";
-      detail: string;
+      type: 'Unauthorized'
+      detail: string
     }>
   | Readonly<{
-      type: "Conflict";
-      detail: string;
+      type: 'Conflict'
+      detail: string
     }>
   | Readonly<{
-      type: "NotFound";
-      detail: string;
+      type: 'NotFound'
+      detail: string
     }>
   | Readonly<{
-      type: "InternalError";
-      detail: string;
-    }>;
+      type: 'InternalError'
+      detail: string
+    }>
 
 export const toAuthValidationError = (
   errors: readonly AuthValidationError[],
-  detail = "Validation error",
+  detail = 'Validation error',
 ): AuthUseCaseError => ({
-  type: "ValidationError",
+  type: 'ValidationError',
   detail,
   errors,
-});
+})
 
-export const toAuthUnauthorizedError = (
-  detail = "Could not validate credentials",
-): AuthUseCaseError => ({
-  type: "Unauthorized",
+export const toAuthUnauthorizedError = (detail = 'Could not validate credentials'): AuthUseCaseError => ({
+  type: 'Unauthorized',
   detail,
-});
+})
 
-export const toAuthInvalidCredentialsError = (
-  detail = "Incorrect Credentials",
-): AuthUseCaseError => ({
-  type: "Unauthorized",
+export const toAuthInvalidCredentialsError = (detail = 'Incorrect Credentials'): AuthUseCaseError => ({
+  type: 'Unauthorized',
   detail,
-});
+})
 
 export const toAuthConflictError = (detail: string): AuthUseCaseError => ({
-  type: "Conflict",
+  type: 'Conflict',
   detail,
-});
+})
 
-export const toAuthNotFoundError = (detail = "Not found"): AuthUseCaseError => ({
-  type: "NotFound",
+export const toAuthNotFoundError = (detail = 'Not found'): AuthUseCaseError => ({
+  type: 'NotFound',
   detail,
-});
+})
 
-export const toAuthInternalError = (detail = "Internal server error"): AuthUseCaseError => ({
-  type: "InternalError",
+export const toAuthInternalError = (detail = 'Internal server error'): AuthUseCaseError => ({
+  type: 'InternalError',
   detail,
-});
+})

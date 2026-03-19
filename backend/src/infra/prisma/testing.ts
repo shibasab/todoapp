@@ -1,154 +1,149 @@
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { copyFile, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process'
+import { copyFile, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { err, ok, type TaskResult } from "@todoapp/shared";
-import { createPrismaClient } from "./client";
+import { err, ok, type TaskResult } from '@todoapp/shared'
+
+import { createPrismaClient } from './client'
 
 export type TemporarySqliteDatabase = Readonly<{
-  databaseUrl: string;
-  cleanup: () => Promise<void>;
-}>;
+  databaseUrl: string
+  cleanup: () => Promise<void>
+}>
 
 export type PrismaSchemaApplyError =
   | Readonly<{
-      type: "PrismaBinaryNotFound";
-      attemptedCommands: readonly string[];
+      type: 'PrismaBinaryNotFound'
+      attemptedCommands: readonly string[]
     }>
   | Readonly<{
-      type: "PrismaSchemaApplyFailed";
-      command: string;
-      exitCode: number | null;
-      stdout: string;
-      stderr: string;
-    }>;
+      type: 'PrismaSchemaApplyFailed'
+      command: string
+      exitCode: number | null
+      stdout: string
+      stderr: string
+    }>
 
 export type EnsureSqliteSchemaOptions = Readonly<{
-  prismaCommandOverride?: string;
-}>;
+  prismaCommandOverride?: string
+}>
 
 const getBackendRoot = (): string => {
-  const currentFilePath = fileURLToPath(import.meta.url);
-  const currentDirectory = dirname(currentFilePath);
-  return resolve(currentDirectory, "../../../");
-};
+  const currentFilePath = fileURLToPath(import.meta.url)
+  const currentDirectory = dirname(currentFilePath)
+  return resolve(currentDirectory, '../../../')
+}
 
 const resolvePrismaCommandCandidates = (options: EnsureSqliteSchemaOptions): readonly string[] => {
-  const envOverride = options.prismaCommandOverride ?? process.env.PRISMA_CLI_PATH;
-  if (envOverride != null && envOverride !== "") {
-    return [envOverride];
+  const envOverride = options.prismaCommandOverride ?? process.env.PRISMA_CLI_PATH
+  if (envOverride != null && envOverride !== '') {
+    return [envOverride]
   }
 
-  return ["prisma"];
-};
+  return ['prisma']
+}
 
-const resolveSchemaPath = (): string => resolve(getBackendRoot(), "prisma/schema.prisma");
+const resolveSchemaPath = (): string => resolve(getBackendRoot(), 'prisma/schema.prisma')
 
-const runPrismaDbPush = (
-  prismaCommand: string,
-  databaseUrl: string,
-  schemaPath: string,
-): SpawnSyncReturns<string> =>
-  spawnSync(prismaCommand, ["db", "push", "--schema", schemaPath], {
+const runPrismaDbPush = (prismaCommand: string, databaseUrl: string, schemaPath: string): SpawnSyncReturns<string> =>
+  spawnSync(prismaCommand, ['db', 'push', '--schema', schemaPath], {
     cwd: getBackendRoot(),
     env: {
       ...process.env,
       DATABASE_URL: databaseUrl,
     },
-    encoding: "utf8",
+    encoding: 'utf8',
     timeout: 30_000,
-  });
+  })
 
 const hasErrorCode = (value: unknown): value is Readonly<{ code: string }> => {
-  if (value == null || typeof value !== "object") {
-    return false;
+  if (value == null || typeof value !== 'object') {
+    return false
   }
 
-  return "code" in value && typeof value.code === "string";
-};
+  return 'code' in value && typeof value.code === 'string'
+}
 
 const isExecutableNotFound = (result: SpawnSyncReturns<string>): boolean =>
-  hasErrorCode(result.error) && result.error.code === "ENOENT";
+  hasErrorCode(result.error) && result.error.code === 'ENOENT'
 
-const SQLITE_FILE_URL_PREFIX = "file:";
+const SQLITE_FILE_URL_PREFIX = 'file:'
 
 const readSqliteDatabasePath = (databaseUrl: string): string => {
   if (!databaseUrl.startsWith(SQLITE_FILE_URL_PREFIX)) {
-    throw new Error(`Unsupported sqlite database url: ${databaseUrl}`);
+    throw new Error(`Unsupported sqlite database url: ${databaseUrl}`)
   }
 
-  const databasePath = databaseUrl.slice(SQLITE_FILE_URL_PREFIX.length);
-  if (databasePath === "") {
-    throw new Error("SQLite database url does not include a file path");
+  const databasePath = databaseUrl.slice(SQLITE_FILE_URL_PREFIX.length)
+  if (databasePath === '') {
+    throw new Error('SQLite database url does not include a file path')
   }
 
-  return databasePath;
-};
+  return databasePath
+}
 
 export const createTemporarySqliteDatabase = async (): Promise<TemporarySqliteDatabase> => {
-  const tempDirectory = await mkdtemp(join(tmpdir(), "todoapp-prisma-"));
-  const databasePath = join(tempDirectory, "test.db");
-  const databaseUrl = `file:${databasePath}`;
+  const tempDirectory = await mkdtemp(join(tmpdir(), 'todoapp-prisma-'))
+  const databasePath = join(tempDirectory, 'test.db')
+  const databaseUrl = `file:${databasePath}`
 
   return {
     databaseUrl,
     cleanup: async () => {
-      await rm(tempDirectory, { recursive: true, force: true });
+      await rm(tempDirectory, { recursive: true, force: true })
     },
-  };
-};
+  }
+}
 
 // SQLite専用: file: URL のDBファイルをコピーし、同一スキーマの一時DBを高速に作る。
-export const cloneTemporarySqliteDatabase = async (
-  sourceDatabaseUrl: string,
-): Promise<TemporarySqliteDatabase> => {
-  const sourceDatabasePath = readSqliteDatabasePath(sourceDatabaseUrl);
-  const clonedDatabase = await createTemporarySqliteDatabase();
-  const clonedDatabasePath = readSqliteDatabasePath(clonedDatabase.databaseUrl);
+export const cloneTemporarySqliteDatabase = async (sourceDatabaseUrl: string): Promise<TemporarySqliteDatabase> => {
+  const sourceDatabasePath = readSqliteDatabasePath(sourceDatabaseUrl)
+  const clonedDatabase = await createTemporarySqliteDatabase()
+  const clonedDatabasePath = readSqliteDatabasePath(clonedDatabase.databaseUrl)
 
   try {
-    await copyFile(sourceDatabasePath, clonedDatabasePath);
+    await copyFile(sourceDatabasePath, clonedDatabasePath)
   } catch (error) {
-    await clonedDatabase.cleanup();
-    throw error;
+    await clonedDatabase.cleanup()
+    throw error
   }
 
-  return clonedDatabase;
-};
+  return clonedDatabase
+}
 
 export const ensureSqliteSchema = async (
   databaseUrl: string,
   options: EnsureSqliteSchemaOptions = {},
 ): TaskResult<void, PrismaSchemaApplyError> => {
-  const prismaCommands = resolvePrismaCommandCandidates(options);
-  const schemaPath = resolveSchemaPath();
+  const prismaCommands = resolvePrismaCommandCandidates(options)
+  const schemaPath = resolveSchemaPath()
 
   for (const prismaCommand of prismaCommands) {
-    const result = runPrismaDbPush(prismaCommand, databaseUrl, schemaPath);
+    const result = runPrismaDbPush(prismaCommand, databaseUrl, schemaPath)
 
     if (isExecutableNotFound(result)) {
-      continue;
+      continue
     }
 
     if (result.status === 0) {
-      return ok(undefined);
+      return ok(undefined)
     }
 
     return err({
-      type: "PrismaSchemaApplyFailed",
+      type: 'PrismaSchemaApplyFailed',
       command: prismaCommand,
       exitCode: result.status,
       stdout: result.stdout,
       stderr: result.stderr,
-    });
+    })
   }
 
   return err({
-    type: "PrismaBinaryNotFound",
+    type: 'PrismaBinaryNotFound',
     attemptedCommands: prismaCommands,
-  });
-};
+  })
+}
 
-export { createPrismaClient };
+export { createPrismaClient }

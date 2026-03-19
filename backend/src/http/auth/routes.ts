@@ -1,35 +1,36 @@
-import type { DetailErrorResponse } from "@todoapp/shared";
-import { Hono } from "hono";
-import { toAuthInvalidFormatError } from "../../domain/auth/errors";
-import type { AuthConfig } from "../../domain/auth/types";
-import { bcryptPasswordPort } from "../../infra/auth/bcrypt-password-port";
-import { jwtTokenPort } from "../../infra/auth/jwt-token-port";
-import { createPrismaAuthUserRepoPort } from "../../infra/auth/prisma-auth-user-repo-port";
-import type { PrismaClient } from "../../infra/prisma/client";
-import { createAuthenticateUseCase } from "../../usecases/auth/authenticate";
-import { toAuthValidationError, type AuthUseCaseError } from "../../usecases/auth/errors";
-import { createLoginUseCase, createRegisterUseCase } from "../../usecases/auth/register-login";
-import type { AuthUseCases } from "../../usecases/auth/types";
-import { readJsonBody, readValidationField, type JsonResponder } from "../shared/request-utils";
-import { toAuthResponseDto, toUserDto } from "./mappers";
-import { loginBodySchema, registerBodySchema } from "./schemas";
-import { toAuthHttpError } from "./to-http-error";
+import type { DetailErrorResponse } from '@todoapp/shared'
+import { Hono } from 'hono'
+
+import { toAuthInvalidFormatError } from '../../domain/auth/errors'
+import type { AuthConfig } from '../../domain/auth/types'
+import { bcryptPasswordPort } from '../../infra/auth/bcrypt-password-port'
+import { jwtTokenPort } from '../../infra/auth/jwt-token-port'
+import { createPrismaAuthUserRepoPort } from '../../infra/auth/prisma-auth-user-repo-port'
+import type { PrismaClient } from '../../infra/prisma/client'
+import { createAuthenticateUseCase } from '../../usecases/auth/authenticate'
+import { toAuthValidationError, type AuthUseCaseError } from '../../usecases/auth/errors'
+import { createLoginUseCase, createRegisterUseCase } from '../../usecases/auth/register-login'
+import type { AuthUseCases } from '../../usecases/auth/types'
+import { readJsonBody, readValidationField, type JsonResponder } from '../shared/request-utils'
+import { toAuthResponseDto, toUserDto } from './mappers'
+import { loginBodySchema, registerBodySchema } from './schemas'
+import { toAuthHttpError } from './to-http-error'
 
 export type AuthHttpRouteDependencies = Readonly<{
-  prisma: PrismaClient;
-  authConfig: AuthConfig;
-  authUseCasesOverride?: AuthUseCases;
-}>;
+  prisma: PrismaClient
+  authConfig: AuthConfig
+  authUseCasesOverride?: AuthUseCases
+}>
 
 const respondError = (context: JsonResponder, errorValue: AuthUseCaseError): Response => {
-  const httpError = toAuthHttpError(errorValue);
+  const httpError = toAuthHttpError(errorValue)
   return context.json(httpError.body, {
     status: httpError.status,
-  });
-};
+  })
+}
 
 const createDefaultAuthUseCases = (dependencies: AuthHttpRouteDependencies): AuthUseCases => {
-  const authUserRepo = createPrismaAuthUserRepoPort(dependencies.prisma);
+  const authUserRepo = createPrismaAuthUserRepoPort(dependencies.prisma)
   return {
     register: createRegisterUseCase({
       authUserRepo,
@@ -48,77 +49,77 @@ const createDefaultAuthUseCases = (dependencies: AuthHttpRouteDependencies): Aut
       tokenPort: jwtTokenPort,
       authConfig: dependencies.authConfig,
     }),
-  };
-};
+  }
+}
 
 export const createAuthRoutes = (dependencies: AuthHttpRouteDependencies): Hono => {
-  const router = new Hono();
-  const authUseCases = dependencies.authUseCasesOverride ?? createDefaultAuthUseCases(dependencies);
+  const router = new Hono()
+  const authUseCases = dependencies.authUseCasesOverride ?? createDefaultAuthUseCases(dependencies)
 
-  router.post("/register", async (context) => {
-    const rawBody = await readJsonBody(context);
+  router.post('/register', async (context) => {
+    const rawBody = await readJsonBody(context)
     if (!rawBody.ok) {
-      return respondError(context, toAuthValidationError([toAuthInvalidFormatError("body")]));
+      return respondError(context, toAuthValidationError([toAuthInvalidFormatError('body')]))
     }
 
-    const parsedBody = registerBodySchema.safeParse(rawBody.data);
+    const parsedBody = registerBodySchema.safeParse(rawBody.data)
     if (!parsedBody.success) {
       return respondError(
         context,
         toAuthValidationError([toAuthInvalidFormatError(readValidationField(parsedBody.error))]),
-      );
+      )
     }
 
-    const registered = await authUseCases.register(parsedBody.data);
+    const registered = await authUseCases.register(parsedBody.data)
     if (!registered.ok) {
-      return respondError(context, registered.error);
+      return respondError(context, registered.error)
     }
 
-    return context.json(toAuthResponseDto(registered.data));
-  });
+    return context.json(toAuthResponseDto(registered.data))
+  })
 
-  router.post("/login", async (context) => {
-    const rawBody = await readJsonBody(context);
+  router.post('/login', async (context) => {
+    const rawBody = await readJsonBody(context)
     if (!rawBody.ok) {
-      return respondError(context, toAuthValidationError([toAuthInvalidFormatError("body")]));
+      return respondError(context, toAuthValidationError([toAuthInvalidFormatError('body')]))
     }
 
-    const parsedBody = loginBodySchema.safeParse(rawBody.data);
+    const parsedBody = loginBodySchema.safeParse(rawBody.data)
     if (!parsedBody.success) {
       return respondError(
         context,
         toAuthValidationError([toAuthInvalidFormatError(readValidationField(parsedBody.error))]),
-      );
+      )
     }
 
-    const loggedIn = await authUseCases.login(parsedBody.data);
+    const loggedIn = await authUseCases.login(parsedBody.data)
     if (!loggedIn.ok) {
-      return respondError(context, loggedIn.error);
+      return respondError(context, loggedIn.error)
     }
 
-    return context.json(toAuthResponseDto(loggedIn.data));
-  });
+    return context.json(toAuthResponseDto(loggedIn.data))
+  })
 
-  router.post("/logout", async (context) => {
-    const authenticated = await authUseCases.authenticate(context.req.header("Authorization"));
+  router.post('/logout', async (context) => {
+    const authenticated = await authUseCases.authenticate(context.req.header('Authorization'))
     if (!authenticated.ok) {
-      return respondError(context, authenticated.error);
+      return respondError(context, authenticated.error)
     }
 
     const responseBody: DetailErrorResponse = {
-      detail: "Successfully logged out",
-    };
-    return context.json(responseBody);
-  });
+      detail: 'Successfully logged out',
+    }
+    return context.json(responseBody)
+  })
 
-  router.get("/user", async (context) => {
-    const authenticated = await authUseCases.authenticate(context.req.header("Authorization"));
+  router.get('/user', async (context) => {
+    const authenticated = await authUseCases.authenticate(context.req.header('Authorization'))
     if (!authenticated.ok) {
-      return respondError(context, authenticated.error);
+      return respondError(context, authenticated.error)
     }
 
-    return context.json(toUserDto(authenticated.data));
-  });
+    return context.json(toUserDto(authenticated.data))
+  })
 
-  return router;
-};
+  return router
+}

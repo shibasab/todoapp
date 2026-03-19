@@ -1,29 +1,29 @@
-import { err, ok, type Result } from "@todoapp/shared";
+import { err, ok, type Result } from '@todoapp/shared'
 
 export type JsonResponder = Readonly<{
-  json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response;
-}>;
+  json: (body: Record<string, unknown>, init?: number | ResponseInit) => Response
+}>
 
 export const readValidationField = (
   errorValue: Readonly<{
-    issues: readonly Readonly<{ path: readonly unknown[] }>[];
+    issues: readonly Readonly<{ path: readonly unknown[] }>[]
   }>,
-  fallbackField = "body",
+  fallbackField = 'body',
 ): string => {
-  const field = errorValue.issues[0]?.path[0];
-  return typeof field === "string" ? field : fallbackField;
-};
+  const field = errorValue.issues[0]?.path[0]
+  return typeof field === 'string' ? field : fallbackField
+}
 
 export const readJsonBody = async (
   context: Readonly<{
     req: Readonly<{
-      json: () => Promise<unknown>;
-    }>;
+      json: () => Promise<unknown>
+    }>
   }>,
-): Promise<Result<unknown, "invalid_body">> => {
+): Promise<Result<unknown, 'invalid_body'>> => {
   try {
-    return ok(await context.req.json());
+    return ok(await context.req.json())
   } catch {
-    return err("invalid_body");
+    return err('invalid_body')
   }
-};
+}

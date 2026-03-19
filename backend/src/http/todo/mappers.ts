@@ -1,24 +1,25 @@
-import type { Todo } from "@todoapp/shared";
-import type { TodoListItem } from "../../domain/todo/types";
+import type { Todo } from '@todoapp/shared'
 
-type TodoDateValue = Date | string;
+import type { TodoListItem } from '../../domain/todo/types'
 
-type TodoResponseSource = Omit<TodoListItem, "dueDate" | "createdAt"> & {
-  readonly dueDate: TodoDateValue | null;
-  readonly createdAt: TodoDateValue;
-};
+type TodoDateValue = Date | string
+
+type TodoResponseSource = Omit<TodoListItem, 'dueDate' | 'createdAt'> & {
+  readonly dueDate: TodoDateValue | null
+  readonly createdAt: TodoDateValue
+}
 
 const toIsoDate = (dateValue: TodoDateValue): string =>
-  dateValue instanceof Date ? dateValue.toISOString() : dateValue;
+  dateValue instanceof Date ? dateValue.toISOString() : dateValue
 
 const toDateOnly = (dateValue: TodoDateValue | null): string | null => {
   if (dateValue == null) {
-    return null;
+    return null
   }
 
-  const iso = toIsoDate(dateValue);
-  return iso.slice(0, 10);
-};
+  const iso = toIsoDate(dateValue)
+  return iso.slice(0, 10)
+}
 
 export const toTodoDto = (todo: TodoResponseSource): Todo => ({
   id: todo.id,
@@ -33,7 +34,7 @@ export const toTodoDto = (todo: TodoResponseSource): Todo => ({
   completedSubtaskCount: todo.completedSubtaskCount,
   totalSubtaskCount: todo.totalSubtaskCount,
   subtaskProgressPercent: todo.subtaskProgressPercent,
-});
+})
 
 export const toTodoListDto = (todos: readonly TodoResponseSource[]): readonly Todo[] =>
-  todos.map((todo) => toTodoDto(todo));
+  todos.map((todo) => toTodoDto(todo))

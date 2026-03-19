@@ -1,4 +1,1 @@
-export {
-  LoginRequestSchema as loginBodySchema,
-  RegisterRequestSchema as registerBodySchema,
-} from "@todoapp/shared";
+export { LoginRequestSchema as loginBodySchema, RegisterRequestSchema as registerBodySchema } from '@todoapp/shared'
