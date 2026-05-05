@@ -29,7 +29,7 @@
     "@todoapp/shared": "file:../shared",
     "bcryptjs": "^3.0.3",
     "hono": "^4.12.15",
-    "jose": "^6.2.2",
+    "jose": "^6.2.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
