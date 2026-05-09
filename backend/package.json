@@ -28,7 +28,7 @@
     "@prisma/client": "^7.8.0",
     "@todoapp/shared": "file:../shared",
     "bcryptjs": "^3.0.3",
-    "hono": "^4.12.16",
+    "hono": "^4.12.18",
     "jose": "^6.2.3",
     "zod": "^4.4.2"
   },
