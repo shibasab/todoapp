@@ -27,7 +27,7 @@
     "oxfmt": "^0.50.0",
     "oxlint": "^1.65.0",
     "oxlint-tsgolint": "^0.22.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.6"
   }
 }
