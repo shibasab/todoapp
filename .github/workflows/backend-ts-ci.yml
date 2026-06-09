@@ -54,7 +54,7 @@ jobs:
 
       - name: Checkout
         if: steps.changes.outputs.should_run == 'true'
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Setup Bun
         if: steps.changes.outputs.should_run == 'true'
