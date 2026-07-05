@@ -22,7 +22,7 @@
     "typecheck:shared": "npm run -w shared typecheck"
   },
   "devDependencies": {
-    "@typescript/native-preview": "^7.0.0-dev.20260626.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260627.2",
     "@vitest/coverage-v8": "^4.1.9",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
