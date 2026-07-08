@@ -37,7 +37,7 @@
     "postcss": "^8.5.16",
     "typescript": "^6.0.2",
     "vite": "^8.1.2",
-    "vue-tsc": "^3.3.5"
+    "vue-tsc": "^3.3.6"
   },
   "engines": {
     "node": ">=24.0.0"
