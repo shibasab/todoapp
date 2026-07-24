@@ -35,7 +35,7 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "happy-dom": "^20.10.6",
     "postcss": "^8.5.19",
-    "typescript": "^6.0.2",
+    "typescript": "^7.0.2",
     "vite": "^8.1.5",
     "vue-tsc": "^3.3.7"
   },
