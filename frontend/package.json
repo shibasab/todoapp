@@ -23,7 +23,7 @@
   "dependencies": {
     "@todoapp/shared": "file:../shared",
     "@vueuse/core": "^14.3.0",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.2",
     "tailwindcss": "^4.3.1",
     "vue": "^3.5.39",
     "vue-router": "^5.2.0"
