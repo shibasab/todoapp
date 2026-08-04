@@ -34,7 +34,7 @@
     "@testing-library/vue": "^8.1.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "happy-dom": "^20.11.0",
-    "postcss": "^8.5.22",
+    "postcss": "^8.5.25",
     "typescript": "^6.0.2",
     "vite": "^8.1.5",
     "vue-tsc": "^3.3.7"
