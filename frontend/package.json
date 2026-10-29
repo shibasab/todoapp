@@ -33,7 +33,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/vue": "^8.1.0",
     "@vitejs/plugin-vue": "^6.0.8",
-    "happy-dom": "^20.11.0",
+    "happy-dom": "^21.0.4",
     "postcss": "^8.5.25",
     "typescript": "^6.0.2",
     "vite": "^8.3.5",
